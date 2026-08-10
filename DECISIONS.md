@@ -533,3 +533,44 @@ tidak akan tahu itu.
 **Status:** debt — perlu revisi
 
 ---
+
+## CP-20 · QA · 2026-08-11 — Cacat produksi: seluruh fitur tulis tidak bisa dijangkau lewat UI
+
+**Dilaporkan user:** "sudah login, terus mana tombol upload, buat folder, hapus?"
+
+**Penyebab:** `api.browse()` memanggil `/api/browse` **tanpa** header
+`Authorization`, karena endpoint itu memang publik. Kelihatannya benar. Tapi
+Worker memakai token yang sama untuk menghitung `isMine` — tanpa token, ia tidak
+tahu siapa yang menelusuri, sehingga `isMine` bernilai `false` pada **setiap**
+folder dan berkas, termasuk milik user sendiri. Tombol "+ Unggah", "+ Folder
+Baru", dan semua tombol hapus bergantung pada nilai itu.
+
+Akibatnya: **tidak satu pun fitur tulis bisa dijangkau lewat UI**, untuk siapa
+pun, selamanya.
+
+**Kenapa lolos dari QA sebelumnya (CP-18):** kesepuluh uji dijalankan lewat
+`curl` langsung ke API — dan API-nya memang sehat, semua lulus. Yang rusak hanya
+sambungan frontend→backend, di satu tempat yang tidak menghasilkan galat apa pun:
+tidak ada pesan merah, tidak ada 4xx, tidak ada apa-apa di konsol. Cuma tombol
+yang tidak pernah muncul. Ini pelajaran yang pantas dicatat: menguji API dan
+menguji produk bukan hal yang sama, dan "tidak ada galat" bukan bukti bahwa
+sesuatu bekerja.
+
+**Perbaikan:** opsi `optionalAuth` di `api.js` — endpoint publik tetap membawa
+token bila ada. Sekaligus ditambahkan `canDelete` (terpisah dari `isMine`)
+supaya folder root warga tidak menampilkan tombol hapus yang server jamin tolak.
+
+**Verifikasi terhadap produksi, dengan ID token asli:**
+
+| Kondisi | `folder.isMine` | `canDelete` folder warga |
+|---|---|---|
+| Di ruang sendiri, bawa token | `true` ✅ | sub-folder `true` ✅ |
+| Di root arsip, bawa token | `false` (benar) | folder sendiri `false` ✅ (root dilindungi) |
+| Folder warga lain, bawa token | `false` ✅ | `false` ✅ |
+| Tanpa token sama sekali | `false` ✅ | `false` ✅ |
+
+**Affects:** `assets/js/api.js`, `assets/js/ui.js`, `worker/src/index.js`.
+
+**Status:** confirmed (sudah diperbaiki & ter-deploy)
+
+---
