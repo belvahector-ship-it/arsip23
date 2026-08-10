@@ -25,7 +25,10 @@ export function setTokenGetter(fn) {
   tokenGetter = fn;
 }
 
-async function request(path, { method = 'GET', body, auth = false, query = {}, isForm = false } = {}) {
+async function request(
+  path,
+  { method = 'GET', body, auth = false, optionalAuth = false, query = {}, isForm = false } = {}
+) {
   const url = new URL(CONFIG.API_BASE.replace(/\/+$/, '') + path);
   url.searchParams.set('workspace', CONFIG.WORKSPACE_ID);
   for (const [k, v] of Object.entries(query)) {
@@ -39,6 +42,23 @@ async function request(path, { method = 'GET', body, auth = false, query = {}, i
     const token = tokenGetter();
     if (!token) throw new ApiError('UNAUTHENTICATED', 'Anda perlu masuk dengan Google dulu.', 401);
     headers.Authorization = `Bearer ${token}`;
+  } else if (optionalAuth) {
+    /* Endpoint publik yang TETAP membawa token kalau ada.
+
+       Ini bukan pemanis. `/api/browse` boleh diakses tanpa masuk, dan awalnya
+       ia memang dipanggil tanpa token sama sekali — kelihatannya benar, karena
+       endpointnya publik. Akibatnya Worker tidak pernah tahu siapa yang sedang
+       menelusuri, sehingga `isMine` selalu `false` pada SETIAP folder dan
+       berkas. Tombol "+ Unggah", "+ Folder Baru", dan tombol hapus semuanya
+       bergantung pada nilai itu — jadi ketiganya tidak akan pernah muncul,
+       bahkan untuk pemilik ruangnya sendiri, dan seluruh fitur tulis aplikasi
+       ini menjadi tidak bisa dijangkau lewat UI.
+
+       Yang menyesatkan: API-nya sendiri baik-baik saja (sudah terbukti di uji
+       CP-18), dan tidak ada satu pun galat yang muncul di layar. Yang hilang
+       cuma tombol. */
+    const token = tokenGetter();
+    if (token) headers.Authorization = `Bearer ${token}`;
   }
 
   let res;
@@ -71,7 +91,8 @@ async function request(path, { method = 'GET', body, auth = false, query = {}, i
 }
 
 export const api = {
-  browse: (folderId, pageToken) => request('/api/browse', { query: { folderId, pageToken } }),
+  browse: (folderId, pageToken) =>
+    request('/api/browse', { optionalAuth: true, query: { folderId, pageToken } }),
 
   login: () => request('/api/login', { method: 'POST', auth: true, body: { workspace: CONFIG.WORKSPACE_ID } }),
 

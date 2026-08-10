@@ -164,12 +164,21 @@ async function handleBrowse(request, env, url) {
       counted++;
     }
 
+    /* Folder root milik warga (`u_<sub>`) tidak boleh punya tombol hapus.
+       Server memang sudah menolaknya (`handleDeleteFolder`), tapi menampilkan
+       tombol yang dijamin gagal itu lebih buruk daripada tidak menampilkannya:
+       user menekan, membaca dialog konfirmasi yang menakutkan, menekan "Ya,
+       Hapus", lalu ditolak — tiga langkah untuk sampai ke jawaban yang sudah
+       kita tahu sejak awal. */
+    const isUserRoot = Boolean(rec?.ownerSub) && rec?.parentFolderId === workspace.driveFolderId;
+
     folders.push({
       id: item.id,
       name: await displayNameForFolder(env, ws, item, rec),
       itemCount,
       ownerSub: rec?.ownerSub || null,
       isMine: mine,
+      canDelete: mine && !isUserRoot,
       createdAt: item.createdTime || null,
     });
   }
@@ -293,6 +302,7 @@ async function handleCreateFolder(request, env, url) {
         itemCount: 0,
         ownerSub: identity.sub,
         isMine: true,
+        canDelete: true,
         createdAt: created.createdTime || new Date().toISOString(),
       },
     },

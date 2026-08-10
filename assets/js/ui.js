@@ -124,7 +124,10 @@ export function folderCard(folder, { onDelete }) {
     hitLayer(`Buka folder ${folder.name}`, { href: `#/f/${encodeURIComponent(folder.id)}` })
   );
 
-  if (folder.isMine && onDelete) {
+  // `canDelete` dipisah dari `isMine`: folder root warga memang miliknya, tapi
+  // tidak boleh dihapus. Kalau server tidak mengirim `canDelete` (versi lama),
+  // jatuh kembali ke `isMine`.
+  if ((folder.canDelete ?? folder.isMine) && onDelete) {
     card.append(menuButton(`Hapus folder ${folder.name}`, () => onDelete(folder)));
   }
   return card;
