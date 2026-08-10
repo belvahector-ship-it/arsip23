@@ -467,3 +467,69 @@ user (revisi dokumen ditunda).
 **Status:** confirmed
 
 ---
+
+## CP-18 · Deploy · 2026-08-11 — Live, dan diuji dari ujung ke ujung
+
+**Yang berjalan:**
+
+| | |
+|---|---|
+| Situs | https://belvahector-ship-it.github.io/arsip23/ |
+| API | https://arsip23-api.belvahector.workers.dev |
+| Repo | https://github.com/belvahector-ship-it/arsip23 |
+| KV | `ARSIP_KV` · `1d040e2e658e489a8052998eb8a40c44` |
+| Storage | My Drive `belvahector69@gmail.com` → folder `Arsip23` (dibuat Worker) |
+
+**Uji yang dijalankan terhadap API produksi, bukan lokal:**
+
+| # | Yang diuji | Hasil |
+|---|---|---|
+| 1 | `POST /api/login` — folder warga dibuat otomatis | ✅ folder `u_<sub>` terbentuk di Drive |
+| 2 | Unggah **sebelum** menyetujui aturan | ✅ ditolak `403` di server, bukan cuma modal di frontend |
+| 3 | `POST /api/accept-notice` | ✅ tersimpan di KV |
+| 4 | Buat folder di ruang sendiri | ✅ `201` |
+| 5 | Unggah berkas | ✅ `201`, berkas ada di Drive |
+| 6 | **Buat folder di ruang milik orang lain** | ✅ ditolak `403` |
+| 7 | Aksi tulis tanpa token | ✅ ditolak `401` |
+| 8 | `GET /api/browse` tanpa token | ✅ `200`, publik seperti seharusnya |
+| 9 | Hapus berkas milik sendiri | ✅ `200` |
+| 10 | Hapus folder root sendiri | ✅ ditolak `403` |
+
+Uji 2, 6, 7, dan 10 adalah inti keamanan SPEC.md §9, dan keempatnya dijalankan
+dengan ID token sungguhan lewat `curl` — **bukan** lewat UI. Ini disengaja:
+lewat UI, tombolnya memang disembunyikan, jadi lolosnya uji hanya membuktikan
+frontend menyembunyikan tombol, bukan bahwa server menolak permintaannya.
+
+**Yang TIDAK bisa diuji otomatis:** tombol "Login dengan Google" membuka jendela
+popup terpisah yang di luar jangkauan otomatisasi peramban. Tombolnya sudah
+terkonfirmasi ter-render dan terinisialisasi dengan Client ID yang benar, dan
+jalur yang ada di baliknya (verifikasi ID token → `/api/login`) sudah diuji
+langsung dengan token asli dari akun Google sungguhan. Yang belum tersentuh
+otomatisasi hanyalah klik popup-nya.
+
+**Status:** confirmed
+
+---
+
+## CP-19 · Deploy · 2026-08-11 — Dokumen lama belum diperbarui (utang yang disengaja)
+
+**Keputusan:** `instruksi.md` dan `spesifikasi-teknis-arsip.md` **sengaja
+dibiarkan basi** atas permintaan user ("revisi md nanti saja, lanjut dulu").
+
+**Yang kini salah di sana:**
+- Menyebut storage di Drive `belvafahrozi@unw.ac.id` → sebenarnya
+  `belvahector69@gmail.com` (CP-17)
+- Menyebut **service account** + **Drive Bersama** → sebenarnya OAuth refresh
+  token + My Drive + scope `drive.file` (CP-17)
+- Menyebut secret `DRIVE_ROOT_FOLDER_ID` → sudah dihapus, diganti KV
+  `config:driveRoot` (CP-17)
+- Menyebut font Inter/JetBrains Mono dan mode gelap → sudah tidak berlaku (CP-06)
+
+**Kenapa dicatat, bukan didiamkan:** dokumen yang salah lebih berbahaya daripada
+dokumen yang tidak ada, karena ia tetap dipercaya. `SPEC.md` sudah dinyatakan
+menang atas keduanya di CP-12, tapi orang yang membuka `instruksi.md` lebih dulu
+tidak akan tahu itu.
+
+**Status:** debt — perlu revisi
+
+---

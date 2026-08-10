@@ -7,6 +7,15 @@ Bisa dilihat siapa saja, hanya bisa diubah pemiliknya.
 Dipakai pertama kali oleh **kasmenoreh.my.id**, tapi dirancang bisa dipakai ulang
 untuk proyek lain lewat satu baris konfigurasi.
 
+**Sudah live:**
+
+| | |
+|---|---|
+| Situs | https://belvahector-ship-it.github.io/arsip23/ |
+| API | https://arsip23-api.belvahector.workers.dev |
+| Storage | My Drive `belvahector69@gmail.com`, folder `Arsip23` (dibuat otomatis) |
+| Domain `arsip23.web.id` | **belum dibeli** — sudah disiapkan di `ALLOWED_ORIGINS` |
+
 - **Kenapa produk ini ada** → [`instruksi.md`](instruksi.md)
 - **Kontrak teknisnya** → [`SPEC.md`](SPEC.md) ← ini yang berlaku kalau ada beda
 - **Kenapa dibangun begini** → [`DECISIONS.md`](DECISIONS.md)
