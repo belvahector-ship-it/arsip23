@@ -65,9 +65,8 @@ Untuk `wrangler dev`, secret dibaca dari `worker/.dev.vars` (sudah masuk
 
 ```
 GOOGLE_CLIENT_ID=xxx.apps.googleusercontent.com
-GOOGLE_SA_EMAIL=arsip23@proyek.iam.gserviceaccount.com
-GOOGLE_SA_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
-DRIVE_ROOT_FOLDER_ID=0AB...
+GOOGLE_CLIENT_SECRET=GOCSPX-...
+GOOGLE_REFRESH_TOKEN=1//0g...
 ```
 
 ---
@@ -78,42 +77,67 @@ Empat bagian. Urutannya penting — Cloudflare butuh nilai dari Google.
 
 ### 1 · Google Drive
 
-1. Masuk ke Drive dengan akun pengelola (`belvafahrozi@unw.ac.id`).
-2. Buat **Drive Bersama** (*Shared Drive*) bernama `Arsip23`.
-   **Bukan folder biasa di My Drive.** Ini bukan preferensi — service account
-   tidak punya kuota penyimpanan sendiri, jadi unggahan ke My Drive akan ditolak
-   Google dengan galat kuota begitu berkas pertama dikirim. Penjelasan panjangnya
-   ada di `DECISIONS.md` CP-08.
-3. Salin **ID Drive Bersama** dari URL-nya:
-   `https://drive.google.com/drive/folders/`**`0AB...`** ← bagian ini.
+**Tidak ada yang perlu dikerjakan di sini.** Worker membuat sendiri folder
+`Arsip23` di My Drive akun pengelola saat pertama kali dipakai.
+
+Ini bukan kemalasan — ini keharusan. Aplikasi ini memakai scope `drive.file`,
+yang hanya memberinya akses ke berkas yang **ia buat sendiri**. Folder yang Anda
+buat manual lewat drive.google.com tidak akan terlihat olehnya sama sekali. Jadi
+jangan membuatkan foldernya duluan; biarkan Worker yang membuat.
+
+Yang perlu dipastikan cuma satu: akun pengelola (`belvahector69@gmail.com`) masih
+punya sisa kuota Google One.
 
 ### 2 · Google Cloud Console
 
-Di [console.cloud.google.com](https://console.cloud.google.com), dengan akun yang
-sama:
+Di [console.cloud.google.com](https://console.cloud.google.com), **pastikan akun
+yang aktif adalah akun pengelola** (perhatikan `authuser` di URL):
 
 1. Buat project baru, mis. `arsip23`.
 2. **APIs & Services → Library** → aktifkan **Google Drive API**.
 3. **APIs & Services → OAuth consent screen**
-   - User type: **External**, publishing status **In production**
-     (kalau dibiarkan *Testing*, hanya akun yang didaftarkan manual yang bisa
-     masuk — dan warga akan melihat penolakan tanpa penjelasan).
-   - Scope cukup `openid`, `email`, `profile`. Aplikasi ini **tidak** meminta
-     akses ke Drive pribadi warga sama sekali.
+   - User type: **External**
+   - Scope: `openid`, `email`, `profile`, dan
+     **`https://www.googleapis.com/auth/drive.file`**
+   - Publishing status: **In production**.
+     Jangan dibiarkan *Testing*. Dalam mode Testing, Google mematikan refresh
+     token setelah **7 hari** — arsip akan berjalan normal seminggu lalu mati
+     sendiri, kegagalan yang paling sulit dilacak justru karena sempat bekerja.
+   - Karena `drive.file` bukan scope sensitif, **tidak perlu verifikasi Google**.
 4. **Credentials → Create credentials → OAuth client ID**
-   - Type: **Web application**
+   - Type: **Web application**, nama `arsip23-web`
    - *Authorized JavaScript origins*: `http://localhost:8788`,
      `https://<user>.github.io`, dan nanti `https://arsip23.web.id`
-   - Simpan **Client ID**-nya.
-5. **Credentials → Create credentials → Service account**
-   - Beri nama `arsip23-worker`. Tidak perlu role project apa pun.
-   - Buka service account itu → **Keys → Add key → JSON** → unduh.
-   - Dari JSON itu Anda butuh dua nilai: `client_email` dan `private_key`.
-   - **Jangan taruh berkas JSON ini di dalam repo.** `.gitignore` sudah menjaganya,
-     tapi jaring pengaman bukan alasan untuk menaruhnya di sana.
-6. Kembali ke Drive Bersama `Arsip23` → **Kelola anggota** → tambahkan
-   `client_email` service account tadi sebagai **Pengelola Konten**
-   (*Content Manager*).
+   - *Authorized redirect URIs*: `http://localhost:8788/oauth-callback`
+   - Simpan **Client ID** dan **Client secret**-nya.
+
+### 2b · Ambil refresh token pengelola (sekali seumur hidup)
+
+Worker menulis ke Drive atas nama akun pengelola, jadi ia butuh satu refresh
+token milik akun itu.
+
+1. Buka URL ini di peramban (ganti `CLIENT_ID`), **saat sedang masuk sebagai akun
+   pengelola**:
+
+   ```
+   https://accounts.google.com/o/oauth2/v2/auth?client_id=CLIENT_ID&redirect_uri=http://localhost:8788/oauth-callback&response_type=code&scope=https://www.googleapis.com/auth/drive.file&access_type=offline&prompt=consent
+   ```
+
+   `access_type=offline` dan `prompt=consent` keduanya wajib — tanpa itu Google
+   hanya memberi access token berumur satu jam, tanpa refresh token.
+
+2. Setelah menyetujui, peramban dilempar ke `localhost:8788/oauth-callback` dan
+   akan menampilkan halaman "not found". **Itu wajar** — yang dibutuhkan ada di
+   bilah alamat: `?code=4/0A...`. Salin nilai `code` itu.
+
+3. Tukarkan jadi refresh token:
+
+   ```bash
+   curl -s -X POST https://oauth2.googleapis.com/token -d client_id=CLIENT_ID -d client_secret=CLIENT_SECRET -d code=KODE_TADI -d grant_type=authorization_code -d redirect_uri=http://localhost:8788/oauth-callback
+   ```
+
+   Ambil nilai `refresh_token` dari jawabannya. Kode `code` hanya bisa dipakai
+   sekali; kalau gagal, ulangi dari langkah 1.
 
 ### 3 · Cloudflare
 
@@ -126,18 +150,13 @@ npx wrangler kv namespace create ARSIP_KV
 Salin `id` yang dikembalikan perintah terakhir ke `worker/wrangler.toml`
 (bagian `[[kv_namespaces]]`, field `id` yang masih kosong).
 
-Lalu pasang keempat secret:
+Lalu pasang ketiga secret:
 
 ```bash
 npx wrangler secret put GOOGLE_CLIENT_ID
-npx wrangler secret put GOOGLE_SA_EMAIL
-npx wrangler secret put GOOGLE_SA_PRIVATE_KEY
-npx wrangler secret put DRIVE_ROOT_FOLDER_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put GOOGLE_REFRESH_TOKEN
 ```
-
-Untuk `GOOGLE_SA_PRIVATE_KEY`, tempelkan isi `private_key` dari JSON **apa
-adanya**, termasuk `-----BEGIN PRIVATE KEY-----` dan urutan `\n`-nya. Worker
-sudah menangani `\n` harfiah maupun baris baru sungguhan.
 
 Deploy:
 
@@ -172,9 +191,11 @@ Nyalakan GitHub Pages: **Settings → Pages → Source: Deploy from a branch →
 | `API_BASE` | `assets/js/config.js` | tidak |
 | `GOOGLE_CLIENT_ID` | `config.js` **dan** secret Worker | tidak (tapi Worker perlu untuk cek `aud`) |
 | `ALLOWED_ORIGINS` | `worker/wrangler.toml` | tidak |
-| `GOOGLE_SA_EMAIL` | secret Worker | ya |
-| `GOOGLE_SA_PRIVATE_KEY` | secret Worker | **ya — akses tulis penuh ke arsip** |
-| `DRIVE_ROOT_FOLDER_ID` | secret Worker | ya (bukan kunci, tapi tak perlu diumbar) |
+| `GOOGLE_CLIENT_SECRET` | secret Worker | ya |
+| `GOOGLE_REFRESH_TOKEN` | secret Worker | **ya — kunci ke seluruh isi arsip** |
+
+ID folder root tidak lagi jadi secret: Worker membuat foldernya sendiri dan
+mengingat ID-nya di KV (`config:driveRoot`).
 
 ---
 

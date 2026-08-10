@@ -410,6 +410,60 @@ namanya, sehingga berkas dimiliki manusia (punya kuota) bukan service account
 
 **Affects:** seluruh langkah deploy, README §Setup, CP-08.
 
-**Status:** open — menunggu user
+**Status:** superseded by CP-17
+
+---
+
+## CP-17 · Deploy · 2026-08-11 — Akun `belvahector69@gmail.com`; service account diganti OAuth refresh token + scope `drive.file`
+
+**Keputusan:** Menggantikan CP-08 dan menutup CP-16.
+
+1. Storage arsip = My Drive **`belvahector69@gmail.com`** (Google One AI Pro,
+   5 TB, baru terpakai 286 GB; Drive-nya sendiri 3,89 GB).
+2. **Bukan** `belvafahrozi@unw.ac.id`.
+3. Worker bertindak atas nama akun itu lewat **refresh token OAuth**, bukan
+   service account.
+4. Scope yang diminta **`drive.file`**, bukan `drive`.
+5. Folder root arsip **dibuat oleh Worker sendiri** dan ID-nya diingat di KV
+   (`config:driveRoot`). Secret `DRIVE_ROOT_FOLDER_ID` dihapus.
+
+**Kenapa bukan unw.ac.id, padahal itu rencana awal user:** halaman akunnya
+menampilkan spanduk Google *"Mentransfer konten Anda — transfer email dan file
+Google Drive Anda ke Akun Google lain"*, yaitu ajakan yang muncul saat akun
+institusi diarahkan untuk ditutup. Arsip ini dimaksudkan menyimpan dokumentasi
+RT bertahun-tahun dan jadi sumber bukti pelaporan ke Pemkot; menaruhnya di akun
+yang sudah disuruh pindah berarti menjadwalkan kehilangan data, bukan sekadar
+menanggung risiko kecil. Ditambah lagi akun kampus dikendalikan admin yang bisa
+mengunci Cloud Console, aplikasi OAuth eksternal, dan Drive Bersama sewaktu-waktu.
+
+**Kenapa refresh token, bukan service account:** akun Google pribadi tidak punya
+Drive Bersama, dan tanpa Drive Bersama, berkas buatan service account dimiliki
+service account itu sendiri — yang kuota penyimpanannya nol. Unggahan akan
+ditolak Google. Refresh token membuat berkas dimiliki manusia yang punya 5 TB.
+
+**Kenapa `drive.file`, bukan `drive`:** `drive` adalah scope *restricted* dan
+menuntut penilaian keamanan Google sebelum aplikasi boleh dipakai publik —
+berbulan-bulan, untuk arsip RT. `drive.file` bukan scope sensitif, jadi tanpa
+verifikasi. Bonusnya nyata, bukan sekadar administratif: aplikasi ini secara
+teknis **tidak bisa** menyentuh berkas lain di Drive pribadi pemiliknya, jadi
+kalau refresh token bocor, yang terpapar hanya isi arsip.
+
+**Harga yang dibayar, dicatat terbuka:**
+- Folder root tidak boleh dibuat manual — folder buatan manusia tidak terlihat
+  oleh scope ini. Karena itu Worker yang membuatnya.
+- Consent screen **wajib berstatus "In production"**. Selama masih "Testing",
+  Google mematikan refresh token setelah 7 hari, dan arsip akan mati sendiri
+  seminggu setelah dipasang — kegagalan yang paling sulit didiagnosis karena
+  semuanya sempat bekerja dengan baik.
+- Kapasitas bergantung pada langganan Google One tetap aktif.
+
+**Affects:** `worker/src/drive.js`, `worker/src/store.js`, `worker/wrangler.toml`,
+README §Setup. `instruksi.md` §2 dan `spesifikasi-teknis-arsip.md` §1–2 kini
+menyebut service account & Drive bendahara — **belum diperbarui** atas permintaan
+user (revisi dokumen ditunda).
+
+**Reversible:** ya, tapi memindahkan arsip antar-akun Google itu merepotkan.
+
+**Status:** confirmed
 
 ---

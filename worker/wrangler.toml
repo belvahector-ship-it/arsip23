@@ -15,8 +15,10 @@ main = "src/index.js"
 compatibility_date = "2026-08-01"
 
 # Variabel di bawah ini BUKAN rahasia — boleh masuk repo.
-# Yang rahasia (GOOGLE_SA_PRIVATE_KEY, GOOGLE_SA_EMAIL, DRIVE_ROOT_FOLDER_ID,
-# GOOGLE_CLIENT_ID) dipasang lewat `wrangler secret put`, tidak pernah di sini.
+# Yang dipasang lewat `wrangler secret put` dan tidak pernah ditulis di sini:
+#   GOOGLE_CLIENT_ID      (juga dipakai frontend; di sini untuk memeriksa `aud`)
+#   GOOGLE_CLIENT_SECRET  RAHASIA
+#   GOOGLE_REFRESH_TOKEN  RAHASIA — kunci ke seluruh isi arsip
 [vars]
 # Daftar asal yang boleh memanggil API ini, dipisah koma. Selama domain
 # arsip23.web.id belum aktif, isi dengan URL GitHub Pages-nya.

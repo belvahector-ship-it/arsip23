@@ -1,21 +1,28 @@
 /* ==========================================================================
-   DRIVE — klien Google Drive API v3 untuk service account
+   DRIVE — klien Google Drive API v3
 
-   Dua hal yang perlu diketahui sebelum membaca berkas ini:
+   Worker bertindak ATAS NAMA akun pemilik arsip, memakai refresh token OAuth
+   miliknya — bukan sebagai service account. Ini pembalikan dari rancangan awal
+   (DECISIONS.md CP-08 → CP-17), dan alasannya sederhana: service account tidak
+   punya kuota penyimpanan sendiri. Berkas yang ia buat tetap dimilikinya, dan
+   Google menolak unggahannya dengan galat kuota — kecuali berkasnya mendarat di
+   Drive Bersama, fitur yang tidak ada di akun Google pribadi. Dengan refresh
+   token, berkas dimiliki manusia yang punya kuota 5 TB, dan seluruh persoalan
+   itu hilang.
 
-   1) Service account tidak punya sesi. Ia menandatangani sebuah JWT dengan
-      private key-nya, menukarnya ke Google dengan access token berumur 1 jam,
-      lalu memakai token itu. Semua itu ada di `getAccessToken()`.
+   Scope yang diminta sengaja `drive.file`, bukan `drive`:
 
-   2) SELURUH pemanggilan di sini membawa `supportsAllDrives=true` (dan
-      `includeItemsFromAllDrives=true` untuk `files.list`). Ini bukan hiasan.
-      Arsip23 menyimpan berkas di Drive Bersama (DECISIONS.md CP-08), dan tanpa
-      parameter itu Drive API berpura-pura Drive Bersama tidak ada: `files.list`
-      mengembalikan nol hasil dan `files.create` menolak parent-nya — keduanya
-      tanpa pesan galat yang menyinggung soal Drive Bersama sama sekali. Gejala
-      yang muncul adalah "foldernya kosong padahal jelas ada isinya", dan itu
-      bisa menghabiskan sore untuk dilacak. Karena itu setiap fungsi di berkas
-      ini melewati satu pintu yang sama, `driveFetch()`, yang menambahkannya.
+     - `drive` adalah scope RESTRICTED. Memakainya berarti aplikasi ini harus
+       lolos penilaian keamanan Google sebelum boleh dipakai publik — proses
+       berbulan-bulan yang jelas tidak sepadan untuk arsip RT.
+     - `drive.file` hanya memberi akses ke berkas yang DIBUAT aplikasi ini
+       sendiri. Bukan scope sensitif, jadi tanpa verifikasi sama sekali.
+
+   Efek sampingnya justru jadi jaminan keamanan yang nyata: seandainya refresh
+   token ini bocor, yang bisa disentuh hanyalah isi arsip — bukan seluruh Drive
+   pribadi pemiliknya. Konsekuensinya, folder root arsip WAJIB dibuat oleh
+   Worker sendiri (lihat `ensureRootFolder`); folder yang dibuat manual lewat
+   drive.google.com tidak akan terlihat oleh scope ini.
    ========================================================================== */
 
 import { err } from './http.js';
@@ -23,38 +30,17 @@ import { err } from './http.js';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const API = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
-const SCOPE = 'https://www.googleapis.com/auth/drive';
 
 const FOLDER_MIME = 'application/vnd.google-apps.folder';
 
+/** Nama folder root di My Drive pemilik. */
+export const ROOT_FOLDER_NAME = 'Arsip23';
+
 /* Access token di-cache di memori isolate. Isolate Cloudflare hidup beberapa
    menit sampai beberapa jam, jadi ini menghapus sebagian besar penukaran token
-   tanpa perlu menyimpan apa pun ke KV — dan token yang tidak pernah disimpan
-   adalah token yang tidak bisa bocor dari penyimpanan. */
+   tanpa menyimpan apa pun ke KV — dan token yang tidak pernah disimpan adalah
+   token yang tidak bisa bocor dari penyimpanan. */
 let tokenCache = { token: null, expiresAt: 0 };
-
-function pemToPkcs8Bytes(pem) {
-  const body = pem
-    .replace(/\\n/g, '\n')                  // wrangler secret sering menyimpan \n harfiah
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
-    .replace(/\s+/g, '');
-  const bin = atob(body);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
-function b64url(bytes) {
-  let bin = '';
-  const arr = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  for (let i = 0; i < arr.length; i++) bin += String.fromCharCode(arr[i]);
-  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function b64urlText(text) {
-  return b64url(new TextEncoder().encode(text));
-}
 
 async function getAccessToken(env) {
   // 60 detik bantalan: token yang "masih 3 detik lagi" akan kedaluwarsa di
@@ -63,46 +49,36 @@ async function getAccessToken(env) {
     return tokenCache.token;
   }
 
-  if (!env.GOOGLE_SA_EMAIL || !env.GOOGLE_SA_PRIVATE_KEY) {
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET || !env.GOOGLE_REFRESH_TOKEN) {
     throw err.internal('Kredensial Google Drive belum dipasang di Worker.');
   }
-
-  const now = Math.floor(Date.now() / 1000);
-  const header = b64urlText(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-  const claims = b64urlText(
-    JSON.stringify({
-      iss: env.GOOGLE_SA_EMAIL,
-      scope: SCOPE,
-      aud: TOKEN_URL,
-      iat: now,
-      exp: now + 3600,
-    })
-  );
-
-  const key = await crypto.subtle.importKey(
-    'pkcs8',
-    pemToPkcs8Bytes(env.GOOGLE_SA_PRIVATE_KEY),
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const sig = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    key,
-    new TextEncoder().encode(`${header}.${claims}`)
-  );
 
   const res = await fetch(TOKEN_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-      assertion: `${header}.${claims}.${b64url(sig)}`,
+      grant_type: 'refresh_token',
+      client_id: env.GOOGLE_CLIENT_ID,
+      client_secret: env.GOOGLE_CLIENT_SECRET,
+      refresh_token: env.GOOGLE_REFRESH_TOKEN,
     }),
   });
 
   if (!res.ok) {
-    console.error('[arsip23] penukaran token service account gagal:', await res.text());
+    const detail = await res.text();
+    console.error('[arsip23] penyegaran token OAuth gagal:', detail);
+
+    /* `invalid_grant` berarti refresh token-nya sudah mati — pemilik mencabut
+       akses, mengganti sandi, atau consent screen masih berstatus "Testing"
+       (yang membuat refresh token kedaluwarsa dalam 7 hari). Ketiganya butuh
+       tindakan manusia, jadi pesannya menyebut itu daripada menyuruh user
+       "coba lagi" untuk sesuatu yang tidak akan pernah pulih sendiri. */
+    if (/invalid_grant/.test(detail)) {
+      throw err.upstream(
+        'Izin Google Drive untuk arsip ini sudah tidak berlaku. Pengelola perlu ' +
+          'menyambungkan ulang akunnya.'
+      );
+    }
     throw err.upstream('Tidak bisa terhubung ke Google Drive.');
   }
 
@@ -115,14 +91,13 @@ async function getAccessToken(env) {
 }
 
 /**
- * Satu-satunya pintu ke Drive API. Menambahkan token, `supportsAllDrives`, dan
- * menerjemahkan galat Drive jadi ApiError yang layak ditampilkan.
+ * Satu-satunya pintu ke Drive API. Menambahkan token dan menerjemahkan galat
+ * Drive jadi ApiError yang layak ditampilkan ke warga.
  */
 async function driveFetch(env, path, { method = 'GET', query = {}, body, headers = {}, base = API } = {}) {
   const token = await getAccessToken(env);
 
   const url = new URL(base + path);
-  url.searchParams.set('supportsAllDrives', 'true');
   for (const [k, v] of Object.entries(query)) {
     if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
   }
@@ -148,13 +123,11 @@ async function driveFetch(env, path, { method = 'GET', query = {}, body, headers
     console.error(`[arsip23] Drive ${method} ${path} → ${res.status}: ${reason}`);
 
     if (res.status === 404) throw err.notFound('Folder atau berkas tidak ada di Drive.');
-    if (res.status === 403 && /quota/i.test(reason)) {
-      // Justru galat yang dicegah oleh CP-08. Kalau ini muncul, penyebab paling
-      // mungkin adalah DRIVE_ROOT_FOLDER_ID menunjuk ke My Drive, bukan ke
-      // Drive Bersama — jadi pesannya menyebut itu langsung.
+    if (/storageQuotaExceeded|quota/i.test(reason)) {
+      // Sekarang ini benar-benar berarti Drive pemiliknya penuh — bukan lagi
+      // jebakan service-account-tanpa-kuota seperti pada rancangan lama.
       throw err.upstream(
-        'Google Drive menolak karena kuota penyimpanan. Pastikan folder root Arsip23 ' +
-          'berada di Drive Bersama, bukan My Drive.'
+        'Penyimpanan Google Drive pengelola sudah penuh. Hubungi pengelola arsip.'
       );
     }
     throw err.upstream();
@@ -177,11 +150,43 @@ export const drive = {
         q: `name = '${escaped}' and '${parentId}' in parents and mimeType = '${FOLDER_MIME}' and trashed = false`,
         fields: `files(${FILE_FIELDS})`,
         pageSize: 1,
-        includeItemsFromAllDrives: 'true',
-        corpora: 'allDrives',
       },
     });
     return res?.files?.[0] || null;
+  },
+
+  /**
+   * Cari-atau-buat folder root arsip di My Drive pemilik.
+   *
+   * Folder ini WAJIB dibuat oleh Worker, bukan oleh manusia lewat
+   * drive.google.com: dengan scope `drive.file`, folder yang dibuat manual
+   * tidak akan pernah terlihat oleh aplikasi ini. Kalau pemilik telanjur
+   * membuatnya sendiri, Worker akan membuat folder kedua dengan nama sama dan
+   * memakai yang itu — membingungkan, tapi tidak merusak.
+   */
+  async ensureRoot(env) {
+    const found = await driveFetch(env, '/files', {
+      query: {
+        q: `name = '${ROOT_FOLDER_NAME}' and 'root' in parents and mimeType = '${FOLDER_MIME}' and trashed = false`,
+        fields: `files(${FILE_FIELDS})`,
+        pageSize: 1,
+      },
+    });
+    if (found?.files?.[0]) return found.files[0];
+
+    return driveFetch(env, '/files', {
+      method: 'POST',
+      query: { fields: FILE_FIELDS },
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: ROOT_FOLDER_NAME,
+        mimeType: FOLDER_MIME,
+        parents: ['root'],
+        description:
+          'Arsip dokumentasi warga. Folder ini dikelola otomatis oleh Arsip23 — ' +
+          'isinya boleh dibaca dan disalin, tapi jangan dipindah atau diganti namanya.',
+      }),
+    });
   },
 
   async createFolder(env, parentId, name) {
@@ -208,8 +213,6 @@ export const drive = {
         orderBy: 'folder,name_natural',
         pageSize: 200,
         pageToken,
-        includeItemsFromAllDrives: 'true',
-        corpora: 'allDrives',
       },
     });
   },
@@ -221,8 +224,6 @@ export const drive = {
         q: `'${folderId}' in parents and trashed = false`,
         fields: 'files(id)',
         pageSize: 100,
-        includeItemsFromAllDrives: 'true',
-        corpora: 'allDrives',
       },
     });
     return res?.files?.length || 0;

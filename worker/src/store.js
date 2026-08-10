@@ -20,6 +20,7 @@ import { drive } from './drive.js';
 const MAX_DEPTH = 12;
 
 const k = {
+  config: (name) => `config:${name}`,
   workspace: (ws) => `workspace:${ws}`,
   user: (ws, sub) => `user:${ws}:${sub}`,
   folder: (id) => `folder:${id}`,
@@ -53,14 +54,12 @@ export async function getWorkspace(env, ws) {
      tidak menghasilkan keputusan apa pun, dan gagalnya (halaman kosong tanpa
      penjelasan) jauh dari jelas. Membuat sendiri lebih ramah dan tidak
      berbahaya: nama folder ditentukan server, bukan client. */
-  if (!env.DRIVE_ROOT_FOLDER_ID) {
-    throw err.internal('DRIVE_ROOT_FOLDER_ID belum dipasang di Worker.');
-  }
+  const rootId = await getRootFolderId(env);
 
   const name = `w_${ws}`;
   const folder =
-    (await drive.findFolderByName(env, env.DRIVE_ROOT_FOLDER_ID, name)) ||
-    (await drive.createFolder(env, env.DRIVE_ROOT_FOLDER_ID, name));
+    (await drive.findFolderByName(env, rootId, name)) ||
+    (await drive.createFolder(env, rootId, name));
 
   const record = {
     driveFolderId: folder.id,
@@ -72,12 +71,31 @@ export async function getWorkspace(env, ws) {
   await putJson(env, k.folder(folder.id), {
     workspace: ws,
     ownerSub: null, // milik workspace, bukan milik user mana pun
-    parentFolderId: env.DRIVE_ROOT_FOLDER_ID,
+    parentFolderId: rootId,
     name,
     depth: 0,
     createdAt: record.createdAt,
   });
   return record;
+}
+
+/**
+ * ID folder root arsip, dibuat sendiri oleh Worker saat pertama kali diperlukan
+ * dan diingat di KV.
+ *
+ * Dulu ini sebuah secret (`DRIVE_ROOT_FOLDER_ID`) yang harus ditempel manual
+ * dari URL Drive. Itu tidak bisa dipakai lagi: dengan scope `drive.file`,
+ * folder yang dibuat manusia tidak terlihat oleh aplikasi ini, jadi ID yang
+ * ditempel manual akan selalu menghasilkan 404. Sekarang folder itu dibuat
+ * aplikasi, dan satu langkah setup yang paling mudah salah ketik pun hilang.
+ */
+export async function getRootFolderId(env) {
+  const cached = await getJson(env, k.config('driveRoot'));
+  if (cached?.id) return cached.id;
+
+  const folder = await drive.ensureRoot(env);
+  await putJson(env, k.config('driveRoot'), { id: folder.id, name: folder.name });
+  return folder.id;
 }
 
 /* --------------------------------------------------------------------------
