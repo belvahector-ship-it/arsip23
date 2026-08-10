@@ -22,11 +22,11 @@ compatibility_date = "2026-08-01"
 [vars]
 # Daftar asal yang boleh memanggil API ini, dipisah koma. Selama domain
 # arsip23.web.id belum aktif, isi dengan URL GitHub Pages-nya.
-ALLOWED_ORIGINS = "http://localhost:8788,https://arsip23.web.id"
+ALLOWED_ORIGINS = "https://belvahector-ship-it.github.io,http://localhost:8788,https://arsip23.web.id"
 
 [[kv_namespaces]]
 binding = "ARSIP_KV"
-id = ""
+id = "1d040e2e658e489a8052998eb8a40c44"
 
 [observability]
 enabled = true

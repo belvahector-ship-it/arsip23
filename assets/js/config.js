@@ -19,11 +19,11 @@ export const CONFIG = {
   /* Judul yang tampil di header. */
   WORKSPACE_TITLE: 'RT — Kasmenoreh',
 
-  /* Base URL Worker. Diisi setelah `wrangler deploy` pertama. */
-  API_BASE: 'https://arsip23-api.workers.dev',
+  /* Base URL Worker. */
+  API_BASE: 'https://arsip23-api.belvahector.workers.dev',
 
-  /* OAuth Client ID dari Google Cloud Console. */
-  GOOGLE_CLIENT_ID: '',
+  /* OAuth Client ID dari Google Cloud Console (project `arsip23`). */
+  GOOGLE_CLIENT_ID: '985225672795-i2o03a5fceam875d2t761n0qipp8c03b.apps.googleusercontent.com',
 
   /* Harus sama dengan MAX_UPLOAD_BYTES di Worker (CP-09). Yang di sini cuma
      demi kenyamanan — menolak berkas 80MB sebelum warga menunggu unggahannya
