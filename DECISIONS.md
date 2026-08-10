@@ -372,3 +372,44 @@ pembacaan kode, dan cacat 1 secara khusus adalah kebocoran tampilan hak akses.
 **Status:** confirmed (sudah diperbaiki)
 
 ---
+
+## CP-16 · Deploy · 2026-08-11 — Setup Google terhenti: akun di Chrome bukan akun yang direncanakan
+
+**Keputusan:** Setup Google (Drive Bersama, Cloud project, OAuth client, service
+account) **dihentikan sebelum membuat apa pun**, menunggu keputusan user.
+
+**Temuan:** Akun Google yang aktif di Chrome adalah
+**`belvahector@gmail.com`** — akun pribadi dengan kuota 15 GB yang **sudah
+terpakai 92% (13,92 dari 15 GB)**, menyisakan sekitar 1 GB. Akun
+`belvafahrozi@unw.ac.id` yang disebut user tidak sedang masuk di Chrome ini.
+Daftar Drive Bersama di akun tersebut juga kosong.
+
+**Kenapa ini menghentikan pekerjaan, bukan sekadar catatan:**
+
+1. **Sisa 1 GB tidak cukup untuk arsip foto kegiatan RT.** Seluruh premis
+   "biaya Rp0 dengan kapasitas longgar" di `instruksi.md` §1 bertumpu pada akun
+   yang kuotanya tidak terlihat batasnya — ciri akun Workspace/kampus, bukan
+   akun gmail pribadi.
+2. **Akun gmail pribadi tidak bisa membuat Drive Bersama sama sekali.** Fitur itu
+   khusus Google Workspace. Padahal CP-08 menetapkan Drive Bersama sebagai satu-
+   satunya cara agar unggahan service account tidak ditolak karena kuota. Dengan
+   kata lain, di akun ini rancangan penyimpanannya tidak bisa dijalankan.
+3. Membuat project Cloud, OAuth client, dan **key service account** di akun yang
+   salah berarti menerbitkan kredensial jangka panjang di tempat yang salah —
+   pekerjaan yang harus dibongkar ulang, bukan sekadar dipindah.
+
+**Yang dibutuhkan sebelum lanjut:** user masuk ke Chrome dengan
+`belvafahrozi@unw.ac.id`, lalu dipastikan apakah admin `unw.ac.id` mengizinkan
+(a) pembuatan Drive Bersama dan (b) pembuatan project di Google Cloud Console.
+Banyak Workspace kampus mengunci keduanya untuk akun mahasiswa.
+
+**Rencana cadangan kalau kampus mengunci Drive Bersama:** opsi (c) di CP-08 —
+menyimpan refresh token OAuth milik pemilik akun di Worker dan bertindak atas
+namanya, sehingga berkas dimiliki manusia (punya kuota) bukan service account
+(tanpa kuota). Lebih berisiko dan perlu keputusan terpisah.
+
+**Affects:** seluruh langkah deploy, README §Setup, CP-08.
+
+**Status:** open — menunggu user
+
+---
