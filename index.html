@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arsip23 — Arsip Dokumentasi Warga</title>
+<meta name="description" content="Arsip dokumentasi kegiatan warga: unggah sendiri, tertata rapi, bisa dilihat siapa saja.">
+<meta name="color-scheme" content="light">
+
+<link rel="preload" href="assets/font/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/font/manrope-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/app.css">
+
+<!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
+     yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
+     butuh login sama sekali, jadi halaman harus tetap berguna tanpa berkas
+     ini. app.js menangani ketiadaannya, bukan menganggapnya pasti ada. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<a class="skip-link" href="#isi">Lompat ke isi</a>
+
+<header class="app-header">
+  <div class="app-header__inner">
+    <a class="app-logo" href="#/" aria-label="Arsip23, beranda arsip">
+      <span class="app-logo__mark">ARSIP</span>23
+    </a>
+    <span class="app-header__ws" id="ws-label" hidden></span>
+
+    <div class="app-user" id="user-area">
+      <!-- Diisi app.js: tombol Google, atau avatar + nama + Keluar -->
+    </div>
+  </div>
+</header>
+
+<div id="notice-bar" hidden></div>
+
+<main class="site-main" id="isi">
+  <div class="container">
+
+    <nav class="crumbs" id="crumbs" aria-label="Lokasi folder"></nav>
+
+    <div class="toolbar">
+      <p class="toolbar__count" id="count">Memuat arsip…</p>
+      <div class="toolbar__actions" id="actions" hidden>
+        <button class="btn" id="btn-new-folder" type="button">+ Folder Baru</button>
+        <button class="btn btn--primary" id="btn-upload" type="button">+ Unggah</button>
+      </div>
+    </div>
+
+    <!-- `multiple` disengaja: warga yang baru pulang kerja bakti punya 30 foto,
+         bukan satu. Memaksanya mengulang alur unggah 30 kali adalah cara
+         tercepat membuat fitur ini tidak dipakai. -->
+    <input type="file" id="file-input" multiple hidden>
+
+    <section class="results" id="explorer" aria-live="polite" aria-busy="true"></section>
+
+  </div>
+</main>
+
+<footer class="app-footer">
+  <div class="app-footer__inner">
+    <p>
+      Arsip23 — dokumentasi kegiatan warga.
+      Berkas tersimpan di Google Drive pengelola.
+    </p>
+    <p><a href="https://kasmenoreh.my.id" rel="noopener">← Kembali ke kasmenoreh.my.id</a></p>
+  </div>
+</footer>
+
+<div class="uploads" id="uploads" aria-live="polite"></div>
+<div class="toasts" id="toasts" aria-live="assertive" role="status"></div>
+
+<!-- ===================== Modal: aturan unggah ===================== -->
+<dialog class="modal" id="modal-notice" aria-labelledby="notice-title">
+  <form method="dialog">
+    <div class="modal__head modal__head--danger" id="notice-title">Aturan sebelum mengunggah</div>
+    <div class="modal__body">
+      <p><strong>Arsip ini bisa dilihat oleh siapa saja.</strong> Ini bukan
+        penyimpanan pribadi. Apa pun yang Anda unggah dapat dibuka oleh warga
+        lain maupun pengunjung.</p>
+      <p>Karena itu, dilarang mengunggah:</p>
+      <ul class="modal__list">
+        <li>Konten yang melanggar kesusilaan, ketelanjangan, atau pornografi.</li>
+        <li>Konten bermuatan SARA, kebencian, atau kekerasan.</li>
+        <li>Foto pribadi orang lain tanpa izin yang bersangkutan.</li>
+        <li>Dokumen yang memuat data pribadi orang lain (KTP, KK, nomor rekening).</li>
+        <li>Apa pun yang melanggar ketentuan hukum yang berlaku di Indonesia.</li>
+      </ul>
+      <p class="fs-sm dim">Tanggung jawab atas isi unggahan berada pada masing-masing
+        pengunggah. Pengelola dapat menghapus konten yang melanggar aturan ini.</p>
+      <label class="checkbox">
+        <input type="checkbox" id="notice-check">
+        <span>Saya sudah membaca dan menyetujui aturan di atas.</span>
+      </label>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" value="cancel" type="submit">Batal</button>
+      <button class="btn btn--primary" id="notice-accept" value="accept" type="submit" disabled>
+        Saya Mengerti
+      </button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ===================== Modal: folder baru ===================== -->
+<dialog class="modal" id="modal-folder" aria-labelledby="folder-title">
+  <form method="dialog" id="folder-form">
+    <div class="modal__head" id="folder-title">Folder baru</div>
+    <div class="modal__body">
+      <div class="field">
+        <label class="field__label" for="folder-name">Nama folder</label>
+        <input class="field__input" id="folder-name" name="name" maxlength="100"
+               placeholder="mis. Kerja Bakti Agustus 2026" autocomplete="off">
+        <p class="field__error" id="folder-error"></p>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" value="cancel" type="submit">Batal</button>
+      <button class="btn btn--primary" value="create" type="submit">Buat Folder</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ===================== Modal: konfirmasi hapus ===================== -->
+<dialog class="modal" id="modal-delete" aria-labelledby="delete-title">
+  <form method="dialog">
+    <div class="modal__head modal__head--danger" id="delete-title">Hapus permanen?</div>
+    <div class="modal__body">
+      <p id="delete-text"></p>
+      <p class="fs-sm dim">Tindakan ini tidak bisa dibatalkan. Berkas tidak masuk
+        ke tempat sampah — ia langsung hilang dari Drive.</p>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" value="cancel" type="submit">Batal</button>
+      <button class="btn btn--danger" value="delete" type="submit">Ya, Hapus</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ===================== Pratinjau gambar ===================== -->
+<dialog class="viewer" id="viewer">
+  <form method="dialog">
+    <img class="viewer__img" id="viewer-img" alt="">
+    <div class="viewer__bar">
+      <span id="viewer-name"></span>
+      <button class="btn" value="close" type="submit">Tutup</button>
+    </div>
+  </form>
+</dialog>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

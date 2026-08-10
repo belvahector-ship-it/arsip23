@@ -1,0 +1,23 @@
+# Kredensial — TIDAK BOLEH masuk repo, apa pun alasannya.
+# Key service account Google memberi akses tulis penuh ke Drive Bersama arsip;
+# sekali ter-push ke repo publik ia harus dianggap bocor selamanya, karena
+# riwayat git menyimpannya meski berkasnya dihapus di commit berikutnya.
+*.pem
+*-key.json
+client_secret*.json
+service-account*.json
+.dev.vars
+.env
+.env.*
+
+# Cloudflare
+worker/.wrangler/
+worker/node_modules/
+node_modules/
+
+# OS & editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/

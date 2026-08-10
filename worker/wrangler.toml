@@ -1,0 +1,30 @@
+# ============================================================================
+# Arsip23 API — Cloudflare Worker
+#
+# `id` KV di bawah SENGAJA dibiarkan kosong di repo. Isinya bukan rahasia
+# (hanya pengenal namespace), tapi mengosongkannya membuat langkah setup gagal
+# dengan keras dan jelas kalau dilewati — jauh lebih baik daripada diam-diam
+# menulis ke namespace milik orang lain yang kebetulan ID-nya masih tertinggal
+# di berkas ini.
+#
+# Cara mengisinya ada di README.md bagian "Setup Cloudflare".
+# ============================================================================
+
+name = "arsip23-api"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# Variabel di bawah ini BUKAN rahasia — boleh masuk repo.
+# Yang rahasia (GOOGLE_SA_PRIVATE_KEY, GOOGLE_SA_EMAIL, DRIVE_ROOT_FOLDER_ID,
+# GOOGLE_CLIENT_ID) dipasang lewat `wrangler secret put`, tidak pernah di sini.
+[vars]
+# Daftar asal yang boleh memanggil API ini, dipisah koma. Selama domain
+# arsip23.web.id belum aktif, isi dengan URL GitHub Pages-nya.
+ALLOWED_ORIGINS = "http://localhost:8788,https://arsip23.web.id"
+
+[[kv_namespaces]]
+binding = "ARSIP_KV"
+id = ""
+
+[observability]
+enabled = true

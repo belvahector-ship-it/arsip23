@@ -1,0 +1,686 @@
+/* ==========================================================================
+   APP — komponen khas Arsip23 (header, breadcrumb, grid, kartu, modal, toast)
+
+   Bergantung pada tokens.css + base.css yang disalin dari kasmenoreh.my.id
+   (DECISIONS.md CP-03). Tidak ada satu pun hex mentah di berkas ini — kalau
+   sebuah warna dibutuhkan dan belum ada tokennya, tokennya yang ditambah,
+   bukan hex-nya yang dituliskan.
+
+   Tanda tangan tema yang wajib dipertahankan di setiap elemen yang bisa
+   ditekan: elemen bergeser PERSIS sejauh selisih offset bayangannya, sehingga
+   sudut kanan-bawah bayangan diam di tempat. Itulah yang membuatnya terasa
+   seperti tombol fisik, bukan kotak yang sekadar bergoyang.
+   ========================================================================== */
+
+/* Atribut `hidden` HARUS menang atas `display` apa pun.
+
+   Nilai bawaan `hidden` cuma `display: none` dengan kekhususan serendah
+   pemilih tipe, jadi satu baris `.toolbar__actions { display: flex }` sudah
+   cukup untuk mengalahkannya — dan tombol "+ Unggah" tetap terpampang untuk
+   pengunjung yang belum masuk. Ini pernah terjadi persis begitu di sini, dan
+   gejalanya menyesatkan: JS-nya benar, CSS-nya yang diam-diam membatalkan. */
+[hidden] { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   Tombol
+   -------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--touch);
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--bw-2) solid var(--ink);
+  box-shadow: var(--sh-1);
+  transition: transform var(--t-press) var(--ease-step),
+              box-shadow var(--t-press) var(--ease-step),
+              background var(--t-fast) var(--ease-mid);
+}
+
+.btn:hover { background: var(--surface-alt); }
+
+.btn:active {
+  transform: translate(2px, 2px);   /* = selisih 4px → 2px */
+  box-shadow: var(--sh-1-press);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--sh-1);
+}
+
+.btn--primary { background: var(--highlight); color: var(--highlight-ink); }
+.btn--primary:hover { background: var(--highlight); filter: brightness(0.94); }
+
+.btn--danger { background: var(--critical); color: var(--paper); }
+.btn--danger:hover { background: var(--critical); filter: brightness(0.9); }
+
+.btn--ghost { box-shadow: none; border-color: var(--ink); }
+.btn--ghost:active { transform: none; box-shadow: none; background: var(--surface-sunk); }
+
+.btn--block { width: 100%; }
+
+/* --------------------------------------------------------------------------
+   Header
+   -------------------------------------------------------------------------- */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  background: var(--paper);
+  border-bottom: var(--bw-3) solid var(--ink);
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--gutter);
+  max-width: var(--container);
+  margin-inline: auto;
+}
+
+.app-logo {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-md);
+  letter-spacing: var(--ls-tight);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.app-logo__mark {
+  display: inline-block;
+  background: var(--brutal-blue);
+  color: var(--paper);
+  padding-inline: var(--sp-2);
+}
+
+.app-header__ws {
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-left: var(--bw-1) solid var(--ink);
+  padding-left: var(--sp-3);
+}
+
+.app-user {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+.app-user__avatar {
+  width: 36px;
+  height: 36px;
+  border: var(--bw-1) solid var(--ink);
+  object-fit: cover;
+  background: var(--surface-alt);
+}
+
+.app-user__name {
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .app-header__ws,
+  .app-user__name { display: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Pita aturan unggah
+   -------------------------------------------------------------------------- */
+
+.notice-bar {
+  background: var(--critical);
+  color: var(--paper);
+  border-bottom: var(--bw-3) solid var(--ink);
+  padding: var(--sp-3) var(--gutter);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.notice-bar__inner {
+  max-width: var(--container);
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.notice-bar .btn { background: var(--paper); }
+
+/* --------------------------------------------------------------------------
+   Breadcrumb + toolbar
+   -------------------------------------------------------------------------- */
+
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  padding-block: var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+/* 44px adalah lantai target sentuh, dan breadcrumb justru butuh itu: ia dipakai
+   untuk MUNDUR setelah user masuk terlalu dalam — momen ketika ia sudah agak
+   frustrasi. Tautan setinggi 35px yang meleset satu kali di layar HP adalah
+   cara termahal untuk menambah frustrasi itu. */
+.crumbs__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.crumbs__link:hover { color: var(--accent-hover); }
+
+.crumbs__sep { color: var(--ink-3); }
+
+.crumbs__current {
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding-block: var(--sp-3);
+  border-block: var(--bw-2) solid var(--ink);
+  margin-bottom: var(--sp-5);
+}
+
+.toolbar__count {
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+
+.toolbar__actions {
+  display: flex;
+  gap: var(--sp-3);
+  margin-left: auto;
+}
+
+@media (max-width: 720px) {
+  .toolbar__actions { margin-left: 0; width: 100%; }
+  .toolbar__actions .btn { flex: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   Grid + kartu
+   -------------------------------------------------------------------------- */
+
+/* Folder dan berkas dipisah jadi dua kelompok, bukan dicampur dalam satu grid.
+
+   Bukan soal selera: kartu berkas punya thumbnail persegi sehingga jauh lebih
+   tinggi daripada kartu folder. Dalam satu grid, baris pertama memaksa kartu
+   folder ikut setinggi kartu berkas di sebelahnya — hasilnya deretan kotak
+   folder yang tiga perempatnya ruang kosong. Memisahkannya membuat tiap
+   kelompok punya tinggi barisnya sendiri, sekaligus mengikuti kebiasaan yang
+   sudah dikenal orang dari Google Drive. */
+.results {
+  display: grid;
+  gap: var(--sp-6);
+  padding-bottom: var(--sp-8);
+}
+
+.group__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-2xs);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--sp-3);
+}
+
+.explorer {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sp-5);
+}
+
+@media (max-width: 1200px) { .explorer { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 960px)  { .explorer { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { .explorer { grid-template-columns: 1fr; gap: var(--sp-4); } }
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: var(--bw-2) solid var(--ink);
+  box-shadow: var(--sh-1);
+  transition: transform var(--t-press) var(--ease-step),
+              box-shadow var(--t-press) var(--ease-step);
+}
+
+.card:hover { box-shadow: var(--sh-2); transform: translate(-2px, -2px); }
+.card:active { box-shadow: var(--sh-1-press); transform: translate(2px, 2px); }
+
+/* Seluruh permukaan kartu bisa ditekan, tapi tombol hapus duduk DI ATASNYA.
+   Caranya: satu elemen tak terlihat yang meregang menutupi kartu, BUKAN
+   membungkus isinya. Membungkus akan berarti tombol hapus berada di dalam
+   sebuah tautan — HTML tidak valid, dan pembaca layar mengumumkan dua kontrol
+   yang saling menelan. Tombol hapus diberi z-index lebih tinggi supaya tetap
+   bisa dijangkau di atas lapisan ini. */
+.card__hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.card__body {
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex: 1;
+}
+
+.card__icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--paper);
+  border: var(--bw-1) solid var(--ink);
+  margin-bottom: var(--sp-2);
+}
+
+.card__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-base);
+  line-height: var(--lh-snug);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card__meta {
+  font-size: var(--fs-2xs);
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.card__menu {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  z-index: 2;
+  /* 44px, bukan 40px. Ini tombol HAPUS PERMANEN yang duduk di pojok kartu yang
+     seluruh permukaannya juga bisa ditekan — target yang terlalu kecil di sini
+     tidak berujung "salah klik lalu ulangi", tapi "salah klik lalu foto kerja
+     bakti hilang". Dialog konfirmasi menahan akibatnya, ukuran ini menahan
+     kesalahannya. */
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  border: var(--bw-1) solid var(--ink);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.card__menu:hover { background: var(--critical); color: var(--paper); }
+
+/* Thumbnail berkas gambar */
+.card__thumb {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  object-fit: cover;
+  border-bottom: var(--bw-2) solid var(--ink);
+  background: var(--surface-sunk);
+}
+
+.card__ext {
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  border-bottom: var(--bw-2) solid var(--ink);
+  background: var(--surface-alt);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-label);
+  color: var(--ink-2);
+}
+
+/* --------------------------------------------------------------------------
+   Keadaan kosong, memuat, galat
+
+   Ketiganya adalah keadaan yang BENAR-BENAR dialami user, bukan pengecualian:
+   folder baru selalu kosong, jaringan RT sering lambat, dan Drive sesekali
+   ngadat. Halaman yang cuma benar saat datanya sempurna itu mockup.
+   -------------------------------------------------------------------------- */
+
+.state {
+  grid-column: 1 / -1;
+  padding: var(--sp-8) var(--sp-5);
+  text-align: center;
+  border: var(--bw-2) dashed var(--ink);
+  background: var(--surface-alt);
+}
+
+.state__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-lg);
+  margin-bottom: var(--sp-2);
+}
+
+.state__text {
+  color: var(--ink-2);
+  max-width: 46ch;
+  margin-inline: auto;
+  margin-bottom: var(--sp-4);
+}
+
+.state--error { border-style: solid; border-color: var(--critical); background: var(--critical-soft); }
+
+/* Kartu bayangan saat memuat. Bergerak hanya kalau user tidak menolak gerak. */
+.skeleton {
+  border: var(--bw-2) solid var(--ink);
+  background: var(--surface-alt);
+  min-height: 190px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton { animation: pulse 1.1s var(--ease-mid) infinite; }
+  @keyframes pulse { 50% { background: var(--surface-sunk); } }
+}
+
+/* --------------------------------------------------------------------------
+   Modal
+   -------------------------------------------------------------------------- */
+
+.modal {
+  /* `margin: auto` adalah cara <dialog> memposisikan dirinya di tengah. Base.css
+     memasang reset `* { margin: 0 }` yang ikut menghapusnya, sehingga modal
+     mendarat di pojok kiri atas — dan penyebabnya sulit ditebak karena tidak
+     ada satu pun aturan di berkas ini yang menyebut posisi. Dikembalikan di
+     sini, bukan dengan melonggarkan reset di base.css yang dipakai bersama
+     situs induk. */
+  margin: auto;
+  border: var(--bw-3) solid var(--ink);
+  box-shadow: var(--sh-3);
+  background: var(--surface);
+  padding: 0;
+  max-width: min(560px, calc(100vw - 2 * var(--gutter)));
+  width: 100%;
+  /* Isi yang lebih tinggi dari layar menggulir DI DALAM badannya, sehingga
+     judul dan tombol "Saya Mengerti" tetap terlihat. Kalau seluruh dialog yang
+     menggulir, tombol persetujuannya hilang di bawah lipatan — dan di layar HP
+     itulah yang paling sering terjadi pada modal aturan yang panjang ini. */
+  max-height: calc(100dvh - 2 * var(--gutter));
+  /* Tanpa ini muncul DUA batang gulir bertumpuk: satu milik <dialog> (yang
+     default-nya `overflow: auto`) dan satu milik .modal__body. Yang menggulir
+     harus badannya saja. */
+  overflow: hidden;
+  color: var(--ink);
+}
+
+.modal > form {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+  min-height: 0;
+}
+
+.modal::backdrop { background: rgb(0 0 0 / 0.55); }
+
+.modal__head {
+  flex: none;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: var(--bw-2) solid var(--ink);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-md);
+}
+
+.modal__head--danger { background: var(--critical); color: var(--paper); }
+
+.modal__body {
+  padding: var(--sp-5);
+  display: grid;
+  gap: var(--sp-4);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.modal__foot {
+  flex: none;
+  padding: var(--sp-4) var(--sp-5);
+  border-top: var(--bw-2) solid var(--ink);
+  display: flex;
+  gap: var(--sp-3);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.modal__list { display: grid; gap: var(--sp-2); font-size: var(--fs-sm); }
+.modal__list li { padding-left: var(--sp-5); position: relative; }
+.modal__list li::before {
+  content: '×';
+  position: absolute;
+  left: 0;
+  font-weight: 800;
+  color: var(--critical-ink);
+}
+
+.field { display: grid; gap: var(--sp-2); }
+
+.field__label {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+.field__input {
+  min-height: var(--touch);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  border: var(--bw-2) solid var(--ink);
+  width: 100%;
+}
+
+.field__error {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  color: var(--critical-ink);
+  min-height: 1.2em;
+}
+
+.checkbox {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--brutal-blue);
+}
+
+/* --------------------------------------------------------------------------
+   Antrian unggah
+   -------------------------------------------------------------------------- */
+
+.uploads {
+  position: fixed;
+  right: var(--gutter);
+  bottom: var(--gutter);
+  z-index: var(--z-toast);
+  width: min(360px, calc(100vw - 2 * var(--gutter)));
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.uploads:empty { display: none; }
+
+.upload-item {
+  background: var(--paper);
+  border: var(--bw-2) solid var(--ink);
+  box-shadow: var(--sh-2);
+  padding: var(--sp-3);
+  display: grid;
+  gap: var(--sp-2);
+  font-size: var(--fs-2xs);
+}
+
+.upload-item__name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-item__bar {
+  height: 10px;
+  border: var(--bw-1) solid var(--ink);
+  background: var(--surface-alt);
+}
+
+.upload-item__fill {
+  height: 100%;
+  width: 0;
+  background: var(--brutal-blue);
+  transition: width var(--t-base) var(--ease-mid);
+}
+
+.upload-item--done .upload-item__fill { background: var(--brutal-blue); }
+.upload-item--error .upload-item__fill { background: var(--critical); width: 100% !important; }
+.upload-item--error { border-color: var(--critical); }
+
+/* --------------------------------------------------------------------------
+   Toast
+   -------------------------------------------------------------------------- */
+
+.toasts {
+  position: fixed;
+  left: 50%;
+  bottom: var(--gutter);
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: grid;
+  gap: var(--sp-2);
+  width: min(520px, calc(100vw - 2 * var(--gutter)));
+}
+
+.toast {
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--bw-2) solid var(--ink);
+  box-shadow: var(--sh-2);
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.toast--error { background: var(--critical); }
+.toast--ok { background: var(--brutal-blue); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: toast-in var(--t-base) var(--ease-out); }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+}
+
+/* --------------------------------------------------------------------------
+   Pratinjau gambar
+   -------------------------------------------------------------------------- */
+
+.viewer { border: none; background: none; max-width: 100vw; max-height: 100vh; padding: 0; }
+.viewer::backdrop { background: rgb(0 0 0 / 0.85); }
+
+.viewer__img {
+  max-width: min(92vw, 1100px);
+  max-height: 86vh;
+  width: auto;
+  border: var(--bw-3) solid var(--paper);
+  background: var(--ink);
+}
+
+.viewer__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  justify-content: space-between;
+  color: var(--paper);
+  padding-top: var(--sp-3);
+  font-size: var(--fs-sm);
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+.app-footer {
+  border-top: var(--bw-3) solid var(--ink);
+  padding: var(--sp-6) var(--gutter);
+  background: var(--footer-bg);
+}
+
+.app-footer__inner {
+  max-width: var(--container);
+  margin-inline: auto;
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+
+.app-footer a { font-weight: 700; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* Tombol Google Identity Services disuntik sebagai iframe oleh Google, jadi
+   isinya tidak bisa kita gaya. Yang bisa dilakukan hanya membingkainya supaya
+   tidak terlihat seperti benda asing yang jatuh ke halaman brutalis ini. */
+.gsi-frame {
+  border: var(--bw-2) solid var(--ink);
+  box-shadow: var(--sh-1);
+  overflow: hidden;
+  line-height: 0;
+}

@@ -1,0 +1,7 @@
+Berkas kosong ini mematikan pemrosesan Jekyll di GitHub Pages.
+
+Tanpa ini, Pages membuang setiap berkas dan folder yang namanya diawali garis
+bawah sebelum situs disajikan. Arsip23 belum punya berkas seperti itu hari ini,
+tapi kebiasaan menamai partial CSS `_something.css` cukup umum sehingga jebakan
+ini pantas ditutup sejak awal — gejalanya (berkas ada di repo, 404 di situs)
+membingungkan justru karena semua terlihat benar di GitHub.
