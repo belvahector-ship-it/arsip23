@@ -1,20 +1,30 @@
 /* ==========================================================================
    AUTH — Google Identity Services di sisi peramban
 
-   Yang disimpan aplikasi ini hanyalah ID token dari Google, di memori. Bukan
-   di localStorage.
+   ID token disimpan di **sessionStorage**, bukan cuma di memori.
 
-   Kenapa bukan localStorage, padahal itu akan membuat user tetap masuk setelah
-   refresh: ID token adalah kunci ke seluruh hak tulis seseorang, dan apa pun
-   yang ada di localStorage bisa dibaca oleh skrip mana pun yang berhasil masuk
-   ke halaman ini. Halaman ini menampilkan nama berkas yang diketik warga —
-   permukaan XSS yang nyata, meski sudah dijaga di ui.js. Menyimpan di memori
-   membuat kebocoran token butuh serangan yang jauh lebih sulit. Harganya: user
-   perlu menekan tombol masuk lagi setelah refresh. Untuk aplikasi yang dipakai
-   sesekali saat mengunggah foto kegiatan, itu pertukaran yang layak.
+   Versi pertama sengaja menyimpannya di memori saja, dengan alasan keamanan:
+   token yang tidak pernah ditulis ke penyimpanan tidak bisa dibaca skrip lain.
+   Harganya diperkirakan kecil — "user tinggal menekan tombol masuk lagi setelah
+   refresh".
+
+   Perkiraan itu keliru, dan yang menunjukkannya adalah pemakaian nyata: user
+   yang punya beberapa akun Google di satu peramban tidak sekadar diminta masuk
+   ulang — ia bisa mendarat sebagai akun yang BERBEDA, karena tombol Google
+   memakai akun aktif peramban, bukan akun yang ia pakai sebelum refresh. Di
+   aplikasi yang seluruh hak ubahnya ditentukan oleh identitas, berganti
+   identitas diam-diam berarti ruang kerjanya ikut berganti — folder yang tadi
+   ada tiba-tiba bukan miliknya lagi. Itu bukan ketidaknyamanan kecil, itu
+   membuat aplikasinya terasa rusak.
+
+   sessionStorage dipilih, bukan localStorage: isinya mati saat tab ditutup dan
+   tidak dibagi ke tab lain, jadi sesi tidak menggantung berhari-hari di
+   komputer bersama. Token juga tetap berumur ±1 jam dari Google.
    ========================================================================== */
 
 import { CONFIG } from './config.js';
+
+const STORAGE_KEY = 'arsip23:idToken';
 
 const state = {
   token: null,
@@ -22,6 +32,19 @@ const state = {
   user: null,
   listeners: new Set(),
 };
+
+/* Penyimpanan bisa diblokir (mode privat sebagian peramban). Kalau itu terjadi,
+   aplikasi tetap jalan — cuma kembali ke perilaku lama, harus masuk ulang. */
+function safeStore(action, value) {
+  try {
+    if (action === 'get') return sessionStorage.getItem(STORAGE_KEY);
+    if (action === 'set') sessionStorage.setItem(STORAGE_KEY, value);
+    if (action === 'del') sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* diabaikan dengan sengaja */
+  }
+  return null;
+}
 
 export function getToken() {
   // Token yang sudah lewat umurnya tidak dikirim sama sekali — lebih baik
@@ -53,8 +76,35 @@ export function signOut() {
   state.token = null;
   state.expiresAt = 0;
   state.user = null;
+  safeStore('del');
   if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect();
   emit();
+}
+
+/** Simpan token baru (dari GIS) ke memori + sessionStorage. */
+function keepToken(idToken) {
+  state.token = idToken;
+  state.expiresAt = expiryOf(idToken);
+  safeStore('set', idToken);
+}
+
+/**
+ * Pulihkan sesi setelah refresh. Mengembalikan true kalau ada token yang masih
+ * hidup — pemanggil lalu memanggil `/api/login` untuk mengambil ulang profil
+ * dan memvalidasi token itu ke server.
+ */
+export function restoreSession() {
+  const saved = safeStore('get');
+  if (!saved) return false;
+
+  const exp = expiryOf(saved);
+  if (Date.now() >= exp) {
+    safeStore('del');
+    return false;
+  }
+  state.token = saved;
+  state.expiresAt = exp;
+  return true;
 }
 
 /** Umur token dibaca dari klaim `exp` — jangan menebak "satu jam". */
@@ -85,8 +135,7 @@ export function mountGoogleButton(container, onCredential) {
   window.google.accounts.id.initialize({
     client_id: CONFIG.GOOGLE_CLIENT_ID,
     callback: async (response) => {
-      state.token = response.credential;
-      state.expiresAt = expiryOf(response.credential);
+      keepToken(response.credential);
       await onCredential();
     },
     auto_select: false,

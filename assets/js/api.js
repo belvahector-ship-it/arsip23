@@ -68,11 +68,33 @@ async function request(
       headers,
       body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
     });
-  } catch {
-    // fetch hanya melempar untuk kegagalan jaringan, bukan untuk status 4xx/5xx.
-    // Membedakan keduanya penting: yang ini layak disarankan "cek koneksi",
-    // yang lain tidak.
-    throw new ApiError('NETWORK', 'Tidak bisa terhubung ke server. Cek koneksi Anda.', 0);
+  } catch (e) {
+    /* `fetch` hanya menolak untuk kegagalan di lapisan jaringan — bukan untuk
+       status 4xx/5xx, yang tetap dianggap "berhasil" olehnya.
+
+       Dulu semua kegagalan di sini dilaporkan sebagai "Cek koneksi Anda". Itu
+       menuduh hal yang salah: sambungan yang putus di tengah unggahan,
+       permintaan yang dibatalkan, dan gangguan sesaat di jalur ke Cloudflare
+       semuanya mendarat di cabang yang sama — dan user yang internetnya jelas
+       jalan jadi mencari masalah di tempat yang tidak ada masalahnya.
+
+       Sebabnya sekarang dibedakan, dan alasan aslinya dari peramban ikut
+       disimpan di `.cause` supaya kejadian berikutnya bisa didiagnosis, bukan
+       ditebak. */
+    const reason = e && e.message ? e.message : String(e);
+    const aborted = e && (e.name === 'AbortError' || /abort/i.test(reason));
+
+    const apiErr = new ApiError(
+      aborted ? 'ABORTED' : 'NETWORK',
+      aborted
+        ? 'Pengiriman terhenti sebelum selesai. Coba lagi.'
+        : 'Sambungan ke server terputus. Kalau internet Anda normal, biasanya ini ' +
+          'gangguan sesaat — coba lagi sebentar lagi.',
+      0
+    );
+    apiErr.cause = reason;
+    console.error('[arsip23] fetch gagal:', method, path, '→', reason);
+    throw apiErr;
   }
 
   let payload = null;

@@ -369,12 +369,36 @@ dom.fileInput.addEventListener('change', async () => {
     }
 
     item.start();
-    try {
-      await api.upload(parentId, file);
+
+    /* Satu kali coba ulang, KHUSUS untuk kegagalan di lapisan jaringan.
+
+       Galat lain tidak diulang dengan sengaja: berkas kebesaran, folder bukan
+       milik Anda, atau aturan belum disetujui akan gagal dengan cara yang persis
+       sama pada percobaan kedua — mengulangnya cuma menunda pesan galat yang
+       sudah benar. Yang layak diulang hanya sambungan yang putus, karena itu
+       memang sering pulih sendiri di koneksi rumahan. */
+    let lastError = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        await api.upload(parentId, file);
+        lastError = null;
+        break;
+      } catch (e) {
+        lastError = e;
+        const transient =
+          e instanceof ApiError && (e.code === 'NETWORK' || e.code === 'ABORTED');
+        if (!transient || attempt === 2) break;
+        item.retry();
+        await new Promise((r) => setTimeout(r, 1500));
+        item.start();
+      }
+    }
+
+    if (lastError) {
+      item.fail(lastError instanceof ApiError ? lastError.message : 'Gagal diunggah.');
+    } else {
       item.done();
       uploaded++;
-    } catch (e) {
-      item.fail(e instanceof ApiError ? e.message : 'Gagal diunggah.');
     }
   }
 
@@ -472,12 +496,30 @@ auth.onChange(() => {
 });
 
 (async function boot() {
-  // Arsip dimuat lebih dulu dan TIDAK menunggu Google: menelusuri arsip tidak
-  // butuh login, jadi skrip Google yang lambat atau diblokir tidak boleh
-  // menahan halaman ini kosong.
+  /* Pulihkan sesi sebelum apa pun yang lain. Kalau token dari sebelum refresh
+     masih hidup, `/api/login` memvalidasinya ke server dan mengembalikan
+     profilnya — sehingga user tetap jadi orang yang sama, bukan akun Google
+     lain yang kebetulan sedang aktif di peramban. */
+  let restored = false;
+  if (auth.restoreSession()) {
+    try {
+      const { user } = await api.login();
+      auth.setUser(user);
+      restored = true;
+    } catch (e) {
+      // Token busuk/kedaluwarsa: bersihkan diam-diam. Ini bukan kegagalan yang
+      // perlu diteriakkan ke user — dari sudut pandangnya ia memang belum masuk.
+      auth.signOut();
+      console.warn('[arsip23] sesi tersimpan tidak berlaku lagi:', e.message);
+    }
+  }
+
+  // Arsip dimuat dan TIDAK menunggu Google: menelusuri arsip tidak butuh login,
+  // jadi skrip Google yang lambat atau diblokir tidak boleh menahan halaman ini
+  // kosong.
   load();
 
   const ready = await auth.whenGoogleReady();
   if (!ready) console.warn('[arsip23] Google Identity Services tidak termuat.');
-  renderUserArea();
+  if (!restored) renderUserArea();
 })();

@@ -258,6 +258,10 @@ export function uploadItem(fileName) {
       fill.style.width = '55%';
       status.textContent = 'Mengirim…';
     },
+    retry() {
+      fill.style.width = '20%';
+      status.textContent = 'Sambungan terputus, mencoba lagi…';
+    },
     done() {
       fill.style.width = '100%';
       status.textContent = 'Selesai';
