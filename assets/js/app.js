@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=9';
-import { api, ApiError, setTokenGetter } from './api.js?v=9';
-import * as auth from './auth.js?v=9';
+import { CONFIG } from './config.js?v=10';
+import { api, ApiError, setTokenGetter } from './api.js?v=10';
+import * as auth from './auth.js?v=10';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,7 +27,7 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=9';
+} from './ui.js?v=10';
 
 setTokenGetter(auth.getToken);
 
@@ -303,6 +303,15 @@ sealDialog(dom.modalGate);
    dibuka kembali selama user belum masuk. Satu-satunya penutupan yang sah
    terjadi di `onGatePassed()`, yang saat itu sudah memasang user-nya. */
 dom.modalGate.addEventListener('close', () => {
+  /* Latar gelap dan kunci gulir dilepas DI SINI, bukan cuma di `closeGate()`.
+     Keduanya hidup di luar <dialog> (lihat komentar di index.html), jadi
+     kalau dialog tertutup lewat jalur yang tidak melewati `closeGate()` —
+     misalnya `onGatePassed()` gagal di tengah jalan setelah user terpasang —
+     keduanya akan tertinggal menutupi halaman: arsip tampak tergelapkan dan
+     tidak bisa digulir, tanpa ada popup yang kelihatan untuk ditutup. */
+  dom.gateBackdrop.hidden = true;
+  document.documentElement.classList.remove('has-locked-scroll');
+
   if (!auth.getUser()) {
     console.warn('[arsip23] gerbang tertutup tanpa login — dibuka kembali.');
     openGate();

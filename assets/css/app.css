@@ -590,6 +590,17 @@ html.has-locked-scroll { overflow: hidden; }
 
 .modal--gate {
   max-width: min(620px, calc(100vw - 2 * var(--gutter)));
+}
+
+/* `[open]` di sini WAJIB, bukan hiasan. Peramban menyembunyikan dialog yang
+   tertutup lewat aturan UA `dialog:not([open]) { display: none }` — dan
+   aturan author seperti blok ini MENANG atas aturan UA. Tanpa `[open]`,
+   `display: flex` di bawah berlaku juga saat gerbang sudah ditutup, jadi
+   setelah login gerbangnya tetap tergambar sebagai lapisan fixed sepenuh
+   layar: popup "nyangkut" menutupi arsip, dan sempat terlihat "dobel"
+   bertumpuk dengan isi halaman. Semua properti tata letak gerbang harus
+   tinggal di dalam selector ber-`[open]` ini. */
+.modal--gate[open] {
   /* Diautorkan langsung, bukan mengandalkan posisi `fixed` + `inset: 0` yang
      seharusnya datang otomatis dari `dialog:modal` di UA stylesheet begitu
      showModal() sukses menaruhnya di top layer. Kalau top layer gagal (lihat
