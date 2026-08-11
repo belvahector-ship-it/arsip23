@@ -20,9 +20,13 @@ compatibility_date = "2026-08-01"
 #   GOOGLE_CLIENT_SECRET  RAHASIA
 #   GOOGLE_REFRESH_TOKEN  RAHASIA — kunci ke seluruh isi arsip
 [vars]
-# Daftar asal yang boleh memanggil API ini, dipisah koma. Selama domain
-# arsip23.web.id belum aktif, isi dengan URL GitHub Pages-nya.
-ALLOWED_ORIGINS = "https://belvahector-ship-it.github.io,http://localhost:8788,https://arsip23.web.id"
+# Daftar asal yang boleh memanggil API ini, dipisah koma.
+#
+# arsip-gratis.my.id (dibeli 2026-08-11, lihat DECISIONS.md CP-26) adalah asal
+# utama sekarang. URL GitHub Pages lama dipertahankan sebagai jaring pengaman
+# selama masa transisi DNS — domain baru butuh waktu untuk propagasi, dan kalau
+# dihapus sekarang situs bisa mati total di tengah migrasi tanpa jalan mundur.
+ALLOWED_ORIGINS = "https://arsip-gratis.my.id,https://www.arsip-gratis.my.id,https://belvahector-ship-it.github.io,http://localhost:8788"
 
 [[kv_namespaces]]
 binding = "ARSIP_KV"
