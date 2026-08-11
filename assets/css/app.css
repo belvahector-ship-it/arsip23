@@ -574,8 +574,31 @@
 
 /* --- Gerbang aturan + login --------------------------------------------- */
 
+/* Dipasang di <html> oleh app.js selama gerbang terbuka, jaring pengaman
+   agar halaman di belakang gerbang tidak ikut tergulir walau top-layer
+   bawaan <dialog> gagal (lihat komentar panjang di index.html). */
+html.has-locked-scroll { overflow: hidden; }
+
+/* Latar gelap terpisah untuk gerbang — lihat komentar di index.html tentang
+   kenapa ::backdrop bawaan <dialog> tidak bisa diandalkan sendirian. */
+.gate-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.55);
+  z-index: var(--z-overlay);
+}
+
 .modal--gate {
   max-width: min(620px, calc(100vw - 2 * var(--gutter)));
+  /* Diautorkan langsung, bukan mengandalkan posisi `fixed` + `inset: 0` yang
+     seharusnya datang otomatis dari `dialog:modal` di UA stylesheet begitu
+     showModal() sukses menaruhnya di top layer. Kalau top layer gagal (lihat
+     komentar di index.html), baris ini yang menjaga gerbang tetap menutupi
+     seluruh layar alih-alih jatuh sebagai blok biasa di tengah halaman. */
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: calc(var(--z-overlay) + 1);
   /* Gerbang ini SENGAJA tidak punya <form> pembungkus (lihat komentar di
      index.html) — tapi tata letak "hanya badan yang menggulir" di atas
      ditulis untuk `.modal > form`, bukan `.modal` sendiri. Tanpa baris ini,

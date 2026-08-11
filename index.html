@@ -38,9 +38,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=7">
-<link rel="stylesheet" href="assets/css/base.css?v=7">
-<link rel="stylesheet" href="assets/css/app.css?v=7">
+<link rel="stylesheet" href="assets/css/tokens.css?v=8">
+<link rel="stylesheet" href="assets/css/base.css?v=8">
+<link rel="stylesheet" href="assets/css/app.css?v=8">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -124,6 +124,17 @@
      tidak lagi bisa menutup dialog ini, tanpa bergantung pada JavaScript. Di
      peramban lama atribut ini diabaikan — karena itu `sealDialog()` dan penjaga
      `close` di app.js tetap ada sebagai lapisan kedua dan ketiga. -->
+<!-- Div gelap terpisah, BUKAN mengandalkan ::backdrop bawaan <dialog>.
+     ::backdrop hanya muncul kalau peramban benar-benar menaruh dialog di
+     "top layer" lewat showModal() — dan di sejumlah peramban HP (WebView
+     bawaan skin Android tertentu, browser bawaan MIUI, dll.) itu diam-diam
+     GAGAL tanpa galat apa pun: dialog-nya tetap terbuka, tapi jatuh sebagai
+     blok biasa di tengah halaman alih-alih lapisan tetap penuh layar —
+     halaman di baliknya tetap ikut tergulir dan terlihat, persis laporan
+     warga "muncul dobel, latar belakang kelihatan". Div ini + penguncian
+     gulir body di app.js adalah jaring pengaman yang tidak bergantung pada
+     dukungan top-layer sama sekali. -->
+<div class="gate-backdrop" id="gate-backdrop" hidden></div>
 <dialog class="modal modal--gate" id="modal-gate" closedby="none" aria-labelledby="gate-title">
   <div class="modal__head modal__head--danger" id="gate-title">
     Aturan &amp; Persetujuan
@@ -249,6 +260,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=7"></script>
+<script type="module" src="assets/js/app.js?v=8"></script>
 </body>
 </html>

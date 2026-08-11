@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=7';
-import { api, ApiError, setTokenGetter } from './api.js?v=7';
-import * as auth from './auth.js?v=7';
+import { CONFIG } from './config.js?v=8';
+import { api, ApiError, setTokenGetter } from './api.js?v=8';
+import * as auth from './auth.js?v=8';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,7 +27,7 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=7';
+} from './ui.js?v=8';
 
 setTokenGetter(auth.getToken);
 
@@ -42,6 +42,7 @@ const dom = {
   btnNewFolder: document.getElementById('btn-new-folder'),
   btnUpload: document.getElementById('btn-upload'),
   modalGate: document.getElementById('modal-gate'),
+  gateBackdrop: document.getElementById('gate-backdrop'),
   gateCheck: document.getElementById('gate-check'),
   gateGoogle: document.getElementById('gate-google'),
   gateLogin: document.querySelector('.gate__login'),
@@ -346,6 +347,13 @@ function openGate() {
   syncGateStep();
   if (!dom.modalGate.open) dom.modalGate.showModal();
 
+  // Latar gelap + penguncian gulir dipasang lewat CSS/JS biasa, TIDAK
+  // menunggu apakah showModal() di atas benar-benar berhasil menaruh
+  // dialog di top layer peramban — lihat komentar panjang di index.html
+  // soal kenapa itu tidak bisa diandalkan sendirian di sejumlah peramban HP.
+  dom.gateBackdrop.hidden = false;
+  document.documentElement.classList.add('has-locked-scroll');
+
   // Tombol Google dipasang DI DALAM gerbang, bukan di header, supaya tidak ada
   // dua tempat berbeda untuk masuk.
   auth.mountGoogleButton(dom.gateGoogle, onGatePassed);
@@ -355,6 +363,8 @@ function openGate() {
 
 function closeGate() {
   if (dom.modalGate.open) dom.modalGate.close();
+  dom.gateBackdrop.hidden = true;
+  document.documentElement.classList.remove('has-locked-scroll');
 }
 
 /** Dipanggil setelah user memilih akun Google di dalam gerbang. */
