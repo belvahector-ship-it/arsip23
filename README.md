@@ -11,10 +11,11 @@ untuk proyek lain lewat satu baris konfigurasi.
 
 | | |
 |---|---|
-| Situs | https://belvahector-ship-it.github.io/arsip23/ |
+| Situs | https://arsip-gratis.my.id (HTTPS menunggu sertifikat GitHub — lihat CP-26) |
+| Situs (cadangan) | https://belvahector-ship-it.github.io/arsip23/ |
 | API | https://arsip23-api.belvahector.workers.dev |
 | Storage | My Drive `belvahector69@gmail.com`, folder `Arsip23` (dibuat otomatis) |
-| Domain `arsip23.web.id` | **belum dibeli** — sudah disiapkan di `ALLOWED_ORIGINS` |
+| DNS | IDwebhost — 4× A record `@` ke IP GitHub Pages + CNAME `www` |
 
 - **Kenapa produk ini ada** → [`instruksi.md`](instruksi.md)
 - **Kontrak teknisnya** → [`SPEC.md`](SPEC.md) ← ini yang berlaku kalau ada beda

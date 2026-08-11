@@ -726,3 +726,63 @@ lalu mengembalikan `webViewLink`.
 | Bagikan tanpa token | ✅ ditolak 401 |
 
 ---
+
+## CP-26 · Deploy · 2026-08-11 — Migrasi ke domain arsip-gratis.my.id
+
+**Keputusan:** Domain `arsip23.web.id` yang direncanakan di `instruksi.md` §2
+tidak jadi dibeli. User membeli **`arsip-gratis.my.id`** di IDwebhost dan
+memintanya dijadikan domain aktif. Judul/branding di `index.html` juga sudah
+diubah user sendiri (langsung lewat editor web GitHub, commit `d2e2ea2`) dari
+"Arsip Dokumentasi Warga" menjadi "Penyimpanan File Gratis" — selaras dengan
+nama domain barunya.
+
+**Yang diubah:**
+1. `CNAME` (berkas baru, root repo) berisi `arsip-gratis.my.id` — GitHub Pages
+   membacanya otomatis dari branch `main`.
+2. `worker/wrangler.toml` → `ALLOWED_ORIGINS` diisi `https://arsip-gratis.my.id`
+   dan `https://www.arsip-gratis.my.id` sebagai asal utama. URL GitHub Pages
+   lama (`https://belvahector-ship-it.github.io`) **sengaja dipertahankan**
+   sebagai jaring pengaman selama masa transisi — domain baru butuh waktu
+   untuk propagasi DNS dan penerbitan sertifikat TLS; menghapusnya sekarang
+   berisiko mematikan situs total tanpa jalan mundur kalau ada yang meleset.
+3. DNS di IDwebhost (Kelola DNS, nameserver bawaan `ns1/ns2.idwebhost.id`):
+   - 4× A record `@` → `185.199.108.153` .. `.111.153` (IP GitHub Pages, demi
+     redundansi sesuai rekomendasi resminya)
+   - 1× CNAME `www` → `belvahector-ship-it.github.io`
+4. GitHub Pages: custom domain diset ke `arsip-gratis.my.id` lewat
+   `gh api -X PUT repos/.../pages -f cname=...`.
+5. Google Cloud OAuth client (`arsip23-web`): ditambahkan
+   `https://arsip-gratis.my.id` dan `https://www.arsip-gratis.my.id` ke
+   *Authorized JavaScript origins* — tanpa ini, tombol Login dengan Google akan
+   ditolak Google karena origin tidak dikenal.
+
+**Catatan quirk panel DNS IDwebhost:** dialog "Simpan" pada Kelola DNS tidak
+me-refresh tabel setelah submit — klik pertama sudah tersimpan di server, tapi
+modal tetap terlihat terbuka. Klik kedua pada modal yang sama dikira submit
+ulang dan ditolak "record having same details already exists". Untuk
+memverifikasi, selalu navigasi ulang (bukan screenshot modal) setelah Simpan.
+
+**Yang BELUM beres saat entri ini ditulis:** HTTPS di domain baru belum aktif.
+`GET http://arsip-gratis.my.id/` sudah 200, DNS sudah resolve penuh (A + AAAA +
+CNAME `www`), tapi GitHub belum selesai menerbitkan sertifikat TLS
+(`gh api .../pages` masih `"status":"building"`, `"https_enforced":false`).
+Ini proses otomatis GitHub yang bisa memakan 5 menit sampai 24 jam setelah DNS
+terverifikasi — tidak ada aksi manual yang bisa mempercepatnya. Setelah siap,
+nyalakan **"Enforce HTTPS"** (`https_enforced: true`) supaya `http://` otomatis
+dialihkan ke `https://`.
+
+**Redirect URI OAuth TIDAK ditambah untuk domain baru** — `http://localhost:8788/oauth-callback`
+hanya dipakai sekali untuk pengambilan manual refresh token pengelola (README
+§2b), bukan bagian dari alur login warga sehari-hari (yang memakai Google
+Identity Services / tombol Sign In langsung, tanpa redirect).
+
+**Affects:** `CNAME`, `worker/wrangler.toml`, DNS eksternal (IDwebhost), setelan
+GitHub Pages, OAuth client Google Cloud.
+
+**Reversible:** ya — menghapus `CNAME` dan mengatur ulang custom domain
+mengembalikan situs ke `belvahector-ship-it.github.io` kapan saja.
+
+**Status:** confirmed · DNS+kode selesai · **HTTPS masih menunggu penerbitan
+sertifikat otomatis GitHub**
+
+---
