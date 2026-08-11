@@ -118,22 +118,33 @@ async function driveFetch(env, path, { method = 'GET', query = {}, body, headers
     /* Drive sesekali mengembalikan HTML saat sedang bermasalah. */
   }
 
-  if (!res.ok) {
-    const reason = parsed?.error?.message || text || res.statusText;
-    console.error(`[arsip23] Drive ${method} ${path} → ${res.status}: ${reason}`);
-
-    if (res.status === 404) throw err.notFound('Folder atau berkas tidak ada di Drive.');
-    if (/storageQuotaExceeded|quota/i.test(reason)) {
-      // Sekarang ini benar-benar berarti Drive pemiliknya penuh — bukan lagi
-      // jebakan service-account-tanpa-kuota seperti pada rancangan lama.
-      throw err.upstream(
-        'Penyimpanan Google Drive pengelola sudah penuh. Hubungi pengelola arsip.'
-      );
-    }
-    throw err.upstream();
-  }
+  if (!res.ok) throwDriveError(res.status, text, parsed, `${method} ${path}`);
 
   return parsed;
+}
+
+/**
+ * Terjemahkan respons gagal dari Drive jadi ApiError berbahasa Indonesia.
+ *
+ * Dipisah dari `driveFetch` supaya `uploadFile` — yang memanggil `fetch`
+ * langsung agar bisa membaca header `Location` dan mengalirkan isi berkas —
+ * memakai penerjemahan galat yang PERSIS SAMA. Kalau tidak dipisah, jalur
+ * unggah akan tumbuh cabang galatnya sendiri, dan cabang yang jarang dipakai
+ * adalah cabang yang tidak pernah diuji.
+ */
+function throwDriveError(status, text, parsed, label) {
+  const reason = parsed?.error?.message || text || String(status);
+  console.error(`[arsip23] Drive ${label} → ${status}: ${reason}`);
+
+  if (status === 404) throw err.notFound('Folder atau berkas tidak ada di Drive.');
+  if (/storageQuotaExceeded|quota/i.test(reason)) {
+    // Sekarang ini benar-benar berarti Drive pemiliknya penuh — bukan lagi
+    // jebakan service-account-tanpa-kuota seperti pada rancangan lama.
+    throw err.upstream(
+      'Penyimpanan Google Drive pengelola sudah penuh. Hubungi pengelola arsip.'
+    );
+  }
+  throw err.upstream();
 }
 
 const FILE_FIELDS =
@@ -233,30 +244,97 @@ export const drive = {
    * Unggah berkas lewat multipart. Berkas dibatasi 20MB (CP-09), jadi memuat
    * seluruhnya di memori Worker masih aman — batas memorinya 128MB.
    */
+  /**
+   * Unggah satu berkas ke Drive lewat sesi RESUMABLE, bukan `uploadType=multipart`.
+   *
+   * Versi pertama memakai multipart dan merakit amplopnya sendiri di memori:
+   * `await file.arrayBuffer()` untuk membaca seluruh isi berkas, lalu
+   * mengalokasikan Uint8Array KEDUA seukuran head+isi+tail dan menyalin
+   * seluruh byte ke dalamnya dengan `body.set(bytes, ...)`.
+   *
+   * Itu memuat berkasnya dua kali di memori sekaligus, dan yang lebih fatal:
+   * `body.set()` atas berkas belasan MB adalah satu operasi SINKRON yang
+   * memakan waktu CPU sungguhan. Cloudflare Worker membatasi waktu CPU per
+   * permintaan (10ms di tier gratis), dan menyalin berkas sebesar itu
+   * melewatinya dengan mudah. Worker-nya lalu dibunuh Cloudflare, yang
+   * membalas dengan halaman galatnya SENDIRI (1101/1102) — dan halaman itu
+   * tidak membawa header CORS. Peramban memblokirnya sebelum sampai ke kode
+   * kita, `fetch()` di api.js menolak dengan TypeError, dan warga cuma
+   * membaca "Sambungan ke server terputus" padahal internetnya normal dan
+   * Worker-nya sehat. Menelusuri arsip tetap lancar karena responsnya kecil,
+   * jadi masalahnya tampak seperti gangguan jaringan acak — padahal
+   * deterministik: selalu gagal untuk berkas yang cukup besar, sekecil apa
+   * pun gangguannya, dan "coba lagi" tidak akan pernah menolong.
+   *
+   * Sesi resumable menghilangkan perakitan itu sepenuhnya: metadata dikirim
+   * sebagai JSON kecil untuk menukar URL sesi, lalu objek `File`-nya
+   * diserahkan APA ADANYA sebagai body — runtime yang mengalirkannya ke
+   * Google tanpa pernah menyalin isinya di JS. Waktu CPU-nya jadi nyaris nol
+   * berapa pun ukuran berkasnya.
+   */
   async uploadFile(env, parentId, file) {
-    const boundary = `arsip23-${crypto.randomUUID()}`;
-    const meta = JSON.stringify({ name: file.name, parents: [parentId] });
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const enc = new TextEncoder();
+    const token = await getAccessToken(env);
+    const contentType = file.type || 'application/octet-stream';
 
-    const head = enc.encode(
-      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n` +
-        `--${boundary}\r\nContent-Type: ${file.type || 'application/octet-stream'}\r\n\r\n`
-    );
-    const tail = enc.encode(`\r\n--${boundary}--\r\n`);
+    /* Langkah 1 — buka sesi. `X-Upload-Content-Length` memberi tahu Google
+       ukuran akhirnya di muka, sehingga kuota/limit ditolak SEKARANG dengan
+       galat yang jelas, bukan setelah seluruh berkas selesai terkirim. */
+    const initUrl = new URL(`${UPLOAD_API}/files`);
+    initUrl.searchParams.set('uploadType', 'resumable');
+    initUrl.searchParams.set('fields', FILE_FIELDS);
 
-    const body = new Uint8Array(head.length + bytes.length + tail.length);
-    body.set(head, 0);
-    body.set(bytes, head.length);
-    body.set(tail, head.length + bytes.length);
-
-    return driveFetch(env, '/files', {
-      base: UPLOAD_API,
+    const init = await fetch(initUrl, {
       method: 'POST',
-      query: { uploadType: 'multipart', fields: FILE_FIELDS },
-      headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-      body,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json; charset=UTF-8',
+        'X-Upload-Content-Type': contentType,
+        'X-Upload-Content-Length': String(file.size),
+      },
+      body: JSON.stringify({ name: file.name, parents: [parentId] }),
     });
+
+    if (!init.ok) {
+      const text = await init.text();
+      let parsed = null;
+      try {
+        parsed = text ? JSON.parse(text) : null;
+      } catch {
+        /* Drive sesekali mengembalikan HTML saat sedang bermasalah. */
+      }
+      throwDriveError(init.status, text, parsed, 'POST /files (buka sesi unggah)');
+    }
+
+    const session = init.headers.get('Location');
+    if (!session) {
+      console.error('[arsip23] Drive tidak mengembalikan URL sesi unggah.');
+      throw err.upstream();
+    }
+
+    /* Langkah 2 — kirim isinya. `body: file` disengaja: menyerahkan objek
+       File langsung membuat runtime mengalirkannya, sedangkan mengubahnya
+       lebih dulu jadi ArrayBuffer/Uint8Array akan mengembalikan persis
+       masalah CPU yang baru saja dihilangkan di atas.
+
+       URL sesi dari Google sudah membawa izinnya sendiri (`upload_id`), jadi
+       header Authorization tidak diulang di sini. */
+    const put = await fetch(session, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: file,
+    });
+
+    const text = await put.text();
+    let parsed = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      /* sama seperti di atas */
+    }
+
+    if (!put.ok) throwDriveError(put.status, text, parsed, 'PUT (kirim isi berkas)');
+
+    return parsed;
   },
 
   async rename(env, fileId, name) {
