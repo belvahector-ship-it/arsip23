@@ -250,14 +250,15 @@ belum bisa dipakai — lihat "Keterbatasan" di bawah.
 
 Ditulis apa adanya, bukan disembunyikan. Rinciannya di `DECISIONS.md`.
 
-- **Workspace privat belum jalan.** Endpoint baca terbuka untuk semua, dan
-  thumbnail memakai URL Drive langsung tanpa proxy (CP-10). Untuk memakai
-  Arsip23 pada data yang tidak untuk konsumsi publik, keduanya harus dikerjakan
-  dulu.
+- **Gerbang login hanya lapisan UI.** Sejak CP-24 situs menuntut login untuk
+  dibuka, tapi `GET /api/browse` **tetap terbuka di server** — siapa pun yang
+  memanggil API langsung masih bisa membaca isi arsip. Kalau yang diinginkan
+  benar-benar privat, endpoint bacanya harus diwajibkan token.
+- **Tautan berbagi tidak bisa dicabut dari aplikasi ini.** Sekali dibagikan,
+  mencabutnya harus lewat Google Drive langsung.
 - **Maksimal 20 MB per berkas** (CP-09). Video kegiatan yang panjang tidak muat.
 - **Jumlah item hanya dihitung untuk 18 folder pertama** per halaman; sisanya
   menampilkan `—`. Ini menghormati batas 50 subrequest tier gratis Cloudflare.
-- **Tanpa rename.** Salah ketik nama folder berarti buat baru dan hapus yang lama.
 - **Tanpa rate limit.** Warga yang login bisa mengunggah sebanyak-banyaknya.
 - **Catatan KV sub-folder tertinggal** setelah folder induknya dihapus. Tidak
   berbahaya (folder Drive-nya sudah tidak ada), tapi KV akan menumpuk perlahan.

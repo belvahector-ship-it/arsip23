@@ -27,9 +27,11 @@ minta tolong siapa pun, dan berkas itu langsung mendarat rapi di Drive bendahara
 Kalau ini rusak, produknya tidak ada gunanya.
 
 **Di luar scope v1** (disebut supaya tidak terasa diam-diam dibuang):
-berbagi folder antar-user · preview/edit dokumen kompleks di browser · moderasi
-konten sebelum tampil · integrasi otomatis ke laporan kas · kuota per user ·
-rename berkas/folder · halaman admin untuk menambah workspace.
+berbagi folder antar-user (memberi hak UBAH ke orang lain) · preview/edit dokumen
+kompleks di browser · moderasi konten sebelum tampil · integrasi otomatis ke
+laporan kas · kuota per user · halaman admin untuk menambah workspace.
+
+*Rename dan bagikan-tautan sudah masuk v1 — lihat DECISIONS.md CP-25.*
 
 ## 2. Batasan
 
@@ -39,11 +41,11 @@ rename berkas/folder · halaman admin untuk menambah workspace.
 | Domain | `arsip23.web.id` — **belum dibeli**. Sementara pakai `<user>.github.io/arsip23` |
 | Backend | Cloudflare Workers (1 worker, beberapa route) |
 | Metadata store | Cloudflare KV, namespace `ARSIP_KV` |
-| File store | Google Drive Bersama (Shared Drive) milik `belvafahrozi@unw.ac.id` — lihat CP-08 |
+| File store | My Drive `belvahector69@gmail.com`, folder `Arsip23` dibuat Worker — lihat CP-17 |
 | Stack frontend | HTML + CSS + JS ES modules. **Tanpa build step, tanpa dependency, tanpa framework** |
 | Stack backend | JavaScript modul Worker (`export default { fetch }`), tanpa framework |
 | Desain | tokens.css tema BRUTAL, disalin dari kasmenoreh.my.id (CP-03) |
-| Auth | Google Identity Services (ID token), hanya untuk aksi tulis |
+| Auth | Google Identity Services (ID token). **Wajib untuk membuka situs** sejak CP-24 |
 | Mode gelap | **Tidak ada** (CP-06) |
 | Bahasa UI | Indonesia |
 | Biaya | Rp0 — semua di tier gratis |
@@ -55,7 +57,7 @@ menduplikasi header, auth, dan state tanpa memberi apa pun ke user.
 
 | Halaman | Route | Auth | Fungsi | Elemen kunci |
 |---|---|---|---|---|
-| Arsip | `/` | publik (baca) | Seluruh aplikasi: telusuri, login, unggah, kelola | header + breadcrumb + toolbar + grid + modal |
+| Arsip | `/` | **login wajib** (CP-24) | Seluruh aplikasi: telusuri, unggah, kelola | gerbang + header + breadcrumb + toolbar + grid + modal |
 | 404 | `/404.html` | publik | Fallback GitHub Pages | balik ke `/` |
 
 State di dalam satu halaman itu dilacak lewat **hash URL**, bukan halaman baru:
@@ -65,22 +67,23 @@ State di dalam satu halaman itu dilacak lewat **hash URL**, bukan halaman baru:
 
 ## 4. Alur pengguna utama
 
-1. Pengunjung membuka `arsip23.web.id` → langsung melihat isi arsip workspace
-   (daftar ruang warga), **tanpa diminta login**.
-2. Ia masuk-keluar folder untuk melihat dokumentasi; klik gambar → preview besar.
-3. Kalau mau mengunggah, ia tekan **"Masuk dengan Google"** di header.
-4. Backend mengecek `user:<ws>:<sub>` di KV → belum ada → dibuatkan folder
-   `u_<sub>` di dalam `w_kasmenoreh`, dicatat di KV, dikembalikan ke frontend.
-5. Frontend memindahkan tampilan ke folder miliknya, toolbar **"+ Folder Baru"**
+1. Pengunjung membuka situs → **gerbang terkunci** muncul: aturan unggah, satu
+   kotak centang persetujuan, dan tombol masuk Google. Tidak ada jalan lain
+   masuk (CP-24 — ini membalik rencana awal "publik untuk dilihat").
+2. Ia mencentang persetujuan → tombol Google aktif → memilih akun.
+3. Backend mengecek `user:<ws>:<sub>` di KV → belum ada → dibuatkan folder
+   `u_<sub>` di dalam `w_kasmenoreh`, dicatat di KV. Persetujuan aturan langsung
+   disimpan (`acceptedNoticeAt`) karena syaratnya sudah dipenuhi di gerbang.
+4. Gerbang tertutup, ia mendarat di ruangnya sendiri; toolbar **"+ Folder Baru"**
    dan **"+ Unggah"** muncul.
-6. Unggahan pertama → modal **aturan unggah** (norma, privasi, "arsip ini bisa
-   dilihat publik"). Wajib tekan "Saya Mengerti"; disimpan di
-   `user:<ws>:<sub>.acceptedNoticeAt` supaya tidak muncul lagi.
-7. Ia buat folder kegiatan, pilih berkas, unggah; progress bar per berkas.
-8. Bendahara — di lain waktu, tanpa menyentuh aplikasi ini — membuka Drive
-   Bersama-nya dan mengambil berkas yang sudah tertata per warga per kegiatan.
-
-Delapan langkah, dan langkah 8 bukan pekerjaan user. Masih dalam batas wajar.
+5. Ia buat folder kegiatan, pilih berkas, unggah; progress per berkas.
+6. Di tiap kartu miliknya ada tiga aksi: **bagikan tautan**, **ganti nama**,
+   **hapus** (CP-25). Bagikan memasang izin Drive "siapa pun yang punya tautan
+   bisa melihat", lalu menampilkan tautannya untuk disalin.
+7. Setelah refresh, sesinya pulih dari sessionStorage — gerbang tidak muncul lagi
+   dan akunnya tetap sama (CP-21).
+8. Bendahara — tanpa menyentuh aplikasi ini — membuka Drive-nya dan mengambil
+   berkas yang sudah tertata per warga per kegiatan.
 
 ## 5. Design tokens
 
@@ -115,14 +118,14 @@ brutalisme tempelan.
 Warna sebagai kode arti di aplikasi ini:
 - **biru** — folder, tautan, fokus
 - **kuning** — tombol aksi utama (Unggah), selalu isian dengan teks hitam
-- **merah** — hapus, galat, dan pita aturan unggah
+- **merah** — hapus, galat, dan judul gerbang aturan
 
 ## 6. Wireframe
 
 **Halaman Arsip — lebar ≥960px**
 ```
-[header: logo ARSIP23 kiri · nama workspace · tombol Masuk/avatar kanan · sticky]
-[pita aturan: hanya saat login & belum setuju — merah, full width]
+[gerbang terkunci: muncul lebih dulu kalau belum masuk — aturan + centang + Google]
+[header: logo ARSIP23 kiri · nama workspace · avatar + Ruang Saya + Keluar · sticky]
 [breadcrumb: Arsip / Belva Fahrozi / Kerja Bakti Agustus   ← border bawah 3px]
 [toolbar: kiri "12 folder · 34 berkas" | kanan (+ Folder Baru) (+ Unggah)]
         ↑ dua tombol kanan HANYA tampil di dalam ruang milik sendiri
@@ -137,7 +140,7 @@ Warna sebagai kode arti di aplikasi ini:
 **Kartu folder**
 ```
 ┌─ border 3px, bayangan 4px ───┐
-│ [ikon folder biru]        ⋮  │   ⋮ hanya untuk pemilik
+│ [ikon folder biru]   🔗 ✏ 🗑 │   tiga aksi, hanya untuk pemilik
 │ Kerja Bakti Agustus          │
 │ 8 item                       │   ← Manrope tabular
 └──────────────────────────────┘
@@ -147,9 +150,10 @@ Warna sebagai kode arti di aplikasi ini:
 baris, ukuran berkas kecil di bawah. **Berkas non-gambar** — blok warna dengan
 ekstensi besar (`PDF`, `DOCX`) menggantikan thumbnail.
 
-**Modal aturan unggah** — kotak tengah, border 3px, bayangan 8px, judul merah,
-daftar larangan, satu checkbox, tombol kuning "Saya Mengerti". Tidak bisa ditutup
-dengan klik luar (harus disengaja).
+**Gerbang aturan** — kotak tengah, border 3px, bayangan 8px, judul merah, daftar
+larangan, satu checkbox, lalu tombol Google. **Tidak punya tombol tutup sama
+sekali** dan tidak bisa ditutup dengan Esc maupun klik luar (tiga lapis kunci,
+lihat CP-24).
 
 ## 7. Model data
 
@@ -202,6 +206,8 @@ Aksi tulis menyertakan `Authorization: Bearer <google_id_token>`.
 | POST | `/api/accept-notice` | ID token | `{ workspace }` | `{ acceptedNoticeAt }` | 200, 401 |
 | POST | `/api/folder` | ID token | `{ workspace, parentFolderId, name }` | `{ folder }` | 201, 401, 403, 409, 422 |
 | POST | `/api/upload` | ID token | multipart: `workspace, parentFolderId, file` | `{ file }` | 201, 401, 403, 413, 422 |
+| POST | `/api/rename` | ID token | `{ workspace, id, name }` | `{ item }` | 200, 401, 403, 409, 422 |
+| POST | `/api/share` | ID token | `{ workspace, id }` | `{ id, name, shareUrl }` | 200, 401, 403, 404 |
 | DELETE | `/api/folder/:id` | ID token | `?workspace` | `{ deleted: true }` | 200, 401, 403, 404 |
 | DELETE | `/api/file/:id` | ID token | `?workspace` | `{ deleted: true }` | 200, 401, 403, 404 |
 

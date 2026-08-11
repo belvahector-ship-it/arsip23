@@ -647,3 +647,82 @@ beres — kalau terulang, konsol sekarang mencatat alasan aslinya.
 **Status:** tidak bisa direproduksi · penanganan galat diperbaiki
 
 ---
+
+## CP-24 · Build · 2026-08-11 — Gerbang aturan + login wajib: arsip TIDAK lagi publik
+
+**Diminta user:** popup terkunci saat pertama membuka situs, berisi aturan +
+centang persetujuan + login Google wajib.
+
+**Keputusan:** dibuat sesuai permintaan. Konsekuensinya dicatat di sini karena
+besar dan tidak terlihat dari kodenya.
+
+**Ini MEMBALIK keputusan inti produk.** `instruksi.md` §2, §5, §6 dan `SPEC.md`
+§1/§4 menetapkan arsip ini **"publik untuk dilihat, privat untuk diubah"** —
+justru itu alasan ia selaras dengan semangat transparansi kas RT, dan alasan
+`/api/browse` dibuat terbuka. Dengan gerbang ini, pengunjung yang hanya ingin
+melihat dokumentasi kegiatan **harus punya akun Google dan menyetujui aturan
+unggah** lebih dulu, padahal ia mungkin tidak akan pernah mengunggah apa pun.
+
+Saya sampaikan keberatan itu ke user sebelum mengerjakannya; user tetap memilih
+gerbang wajib. Itu keputusannya sebagai pemilik produk, dan dicatat di sini agar
+pembalikan ini tidak hilang.
+
+**Yang perlu diperhatikan sebagai akibatnya:**
+- Endpoint `/api/browse` **tetap terbuka di server**. Gerbang ini hanya lapisan
+  UI; siapa pun yang memanggil API langsung tetap bisa membaca isi arsip. Kalau
+  yang diinginkan benar-benar privat, endpoint bacanya harus diwajibkan token —
+  perubahan terpisah yang belum dilakukan.
+- CP-10 (thumbnail memakai URL Drive langsung tanpa proxy) dulu dibenarkan
+  dengan alasan "arsip ini memang publik". Alasan itu kini goyah.
+
+**Persetujuan dicatat di dua tempat** — `localStorage` (menentukan gerbang muncul
+lagi atau tidak di perangkat ini) dan KV server (`acceptedNoticeAt`, menentukan
+unggahan diterima). Satu saja tidak cukup: localStorage saja bisa dilewati dengan
+membersihkan penyimpanan; server saja tidak bisa ditanya sebelum user masuk,
+padahal login justru terjadi di dalam gerbang.
+
+**Gerbang dikunci tiga lapis** — `closedby="none"` (platform), handler `cancel`
+(Esc), dan penjaga `close` yang membuka ulang kalau tertutup tanpa login. Saat
+diuji, satu kali gerbang sempat tertutup oleh Esc dan tidak berulang; karena ini
+gerbang, saya tidak mau bergantung pada satu lapisan yang perilakunya tidak
+sepenuhnya bisa saya jelaskan.
+
+---
+
+## CP-25 · Build · 2026-08-11 — Ganti nama & bagikan tautan
+
+**Ganti nama** (`POST /api/rename`) berlaku untuk folder dan berkas. Ini
+mengeluarkan rename dari daftar "di luar scope v1" (`instruksi.md` §4).
+
+- Jenis item ditentukan dari `mimeType` yang dijawab Drive, **bukan** dari yang
+  disebut client — kalau client boleh menyebut jenisnya sendiri, ia bisa mengaku
+  folder orang lain adalah "berkas" untuk melewati jalur validasi yang berbeda.
+- Ekstensi berkas dikembalikan diam-diam kalau user menghapusnya: warga yang
+  mengetik "Nota Konsumsi" untuk `nota.pdf` tidak bermaksud membuat berkas yang
+  susah dibuka setelah diunduh.
+- Folder root warga tidak bisa diganti nama — namanya berasal dari nama akun
+  Google-nya.
+
+**Bagikan tautan** (`POST /api/share`) memasang izin Drive `anyone`/`reader`
+lalu mengembalikan `webViewLink`.
+
+- Diperlakukan sebagai **aksi tulis penuh**, lewat validasi kepemilikan yang sama
+  seperti hapus dan unggah. Ini bukan sekadar menyalin URL — ia mengubah izin di
+  Drive, dan efeknya permanen sampai dicabut manual dari Drive.
+- Perannya dipatok `reader`: penerima bisa melihat dan mengunduh, tidak bisa
+  mengubah atau menghapus.
+
+**Diuji terhadap produksi:**
+
+| Uji | Hasil |
+|---|---|
+| Ganti nama folder | ✅ |
+| Ganti nama berkas tanpa ekstensi → `.pdf` dikembalikan | ✅ |
+| Bagikan berkas → tautan terbit | ✅ |
+| Buka tautan **tanpa login, tanpa cookie** | ✅ 200, unduhan berhasil |
+| Ganti nama folder warga lain | ✅ ditolak 403 |
+| Bagikan folder warga lain | ✅ ditolak 403 |
+| Ganti nama folder root sendiri | ✅ ditolak 403 |
+| Bagikan tanpa token | ✅ ditolak 401 |
+
+---
