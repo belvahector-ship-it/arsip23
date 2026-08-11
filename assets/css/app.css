@@ -337,11 +337,22 @@
   font-variant-numeric: tabular-nums;
 }
 
-.card__menu {
+/* Deretan aksi di pojok kartu: bagikan · ganti nama · hapus.
+
+   Tiga tombol sejajar, bukan menu titik-tiga. Menu menyembunyikan aksi di balik
+   satu ketukan tambahan, dan untuk warga sepuh yang perlu diajari sekali lalu
+   mengingatnya, ikon yang selalu terlihat lebih mudah daripada menu yang harus
+   ditemukan dulu. Ruangnya cukup karena kartunya lebar. */
+.card__actions {
   position: absolute;
   top: var(--sp-2);
   right: var(--sp-2);
   z-index: 2;
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.card__menu {
   /* 44px, bukan 40px. Ini tombol HAPUS PERMANEN yang duduk di pojok kartu yang
      seluruh permukaannya juga bisa ditekan — target yang terlalu kecil di sini
      tidak berujung "salah klik lalu ulangi", tapi "salah klik lalu foto kerja
@@ -357,7 +368,10 @@
   line-height: 1;
 }
 
-.card__menu:hover { background: var(--critical); color: var(--paper); }
+/* Warna hover membedakan aksi yang bisa dibatalkan dari yang tidak.
+   Hapus itu permanen (bukan ke tempat sampah), jadi hanya ia yang memerah. */
+.card__menu:hover { background: var(--accent); color: var(--paper); }
+.card__menu--danger:hover { background: var(--critical); color: var(--paper); }
 
 /* Thumbnail berkas gambar */
 .card__thumb {
@@ -533,6 +547,55 @@
   align-items: flex-start;
   font-size: var(--fs-sm);
   cursor: pointer;
+}
+
+/* --- Gerbang aturan + login --------------------------------------------- */
+
+.modal--gate { max-width: min(620px, calc(100vw - 2 * var(--gutter))); }
+
+/* Tidak ada `.modal__foot` di gerbang — ketiadaan tombol "Batal"/"Tutup" itu
+   disengaja, karena tidak ada jalan keluar selain menyetujui dan masuk. */
+.modal--gate .modal__body { border-top: none; }
+
+.gate__login {
+  border-top: var(--bw-2) solid var(--ink);
+  padding-top: var(--sp-4);
+  display: grid;
+  gap: var(--sp-3);
+  justify-items: start;
+}
+
+.gate__step {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+
+/* Langkah 2 diredam sampai kotak persetujuan dicentang — supaya urutannya
+   terbaca sebagai urutan, bukan dua pilihan sejajar. */
+.gate__login[data-locked='true'] { opacity: 0.4; pointer-events: none; }
+
+/* --- Baris tautan berbagi ------------------------------------------------ */
+
+.share-row {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: stretch;
+}
+
+.share-row .field__input {
+  font-size: var(--fs-xs);
+  /* Tautan Drive panjang; biarkan menggulir di dalam kotaknya sendiri
+     daripada memaksa modal melebar. */
+  overflow-x: auto;
+}
+
+.share-row .btn { flex: none; white-space: nowrap; }
+
+@media (max-width: 560px) {
+  .share-row { flex-direction: column; }
+  .share-row .btn { width: 100%; }
 }
 
 .checkbox input {

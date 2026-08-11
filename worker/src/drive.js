@@ -259,6 +259,37 @@ export const drive = {
     });
   },
 
+  async rename(env, fileId, name) {
+    return driveFetch(env, `/files/${encodeURIComponent(fileId)}`, {
+      method: 'PATCH',
+      query: { fields: FILE_FIELDS },
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+  },
+
+  /**
+   * Jadikan berkas/folder bisa dibuka siapa pun yang punya tautannya.
+   *
+   * `type: 'anyone'` berarti benar-benar siapa pun di internet — tidak perlu
+   * akun Google, tidak perlu diundang. Perannya dipatok `reader`: penerima
+   * tautan bisa melihat dan mengunduh, tidak bisa mengubah atau menghapus.
+   *
+   * Menjalankan ini dua kali aman: Drive memperlakukan izin `anyone` sebagai
+   * satu entri, jadi permintaan kedua tidak menumpuk izin baru.
+   */
+  async shareAnyone(env, fileId) {
+    await driveFetch(env, `/files/${encodeURIComponent(fileId)}/permissions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+    });
+    // Ambil ulang: `webViewLink` baru terisi/berlaku setelah izinnya dipasang.
+    return driveFetch(env, `/files/${encodeURIComponent(fileId)}`, {
+      query: { fields: FILE_FIELDS },
+    });
+  },
+
   /**
    * Hapus permanen. Sengaja BUKAN "buang ke sampah": di Drive Bersama, sampah
    * dikelola per-Drive dan bendahara belum tentu punya akses membersihkannya,

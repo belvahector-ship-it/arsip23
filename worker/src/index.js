@@ -26,6 +26,8 @@ import {
   forgetFolder,
   assertOwnedFolder,
   assertOwnedFile,
+  assertOwnedItem,
+  renameFolderRecord,
 } from './store.js';
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024; // CP-09
@@ -360,6 +362,76 @@ async function handleUpload(request, env, url) {
 }
 
 /* --------------------------------------------------------------------------
+   POST /api/rename
+   -------------------------------------------------------------------------- */
+
+async function handleRename(request, env, url) {
+  const identity = await requireUser(request, env);
+  const body = await bodyJson(request);
+  const ws = (body.workspace || workspaceOf(request, url) || '').trim().toLowerCase();
+  await getWorkspace(env, ws);
+
+  const { item, isFolder } = await assertOwnedItem(env, ws, identity.sub, body.id);
+
+  /* Nama berkas divalidasi dengan aturan yang sama seperti folder, KECUALI
+     ekstensinya: user boleh saja mengetik "Nota Belanja" untuk berkas
+     "nota.pdf", dan kalau ekstensinya hilang, Drive tetap tahu jenisnya dari
+     mimeType — tapi warga yang mengunduhnya akan kesulitan membukanya. Jadi
+     ekstensi asli dikembalikan diam-diam kalau user menghapusnya. */
+  let name = cleanFolderName(body.name);
+  if (!isFolder) {
+    const oldExt = (item.name.match(/\.[a-z0-9]{1,8}$/i) || [''])[0];
+    if (oldExt && !name.toLowerCase().endsWith(oldExt.toLowerCase())) {
+      name += oldExt;
+    }
+  }
+
+  if (name === item.name) {
+    return json({ item: { id: item.id, name } }, { request, env });
+  }
+
+  const parent = item.parents?.[0];
+  if (isFolder && parent) {
+    const clash = await drive.findFolderByName(env, parent, name);
+    if (clash && clash.id !== item.id) {
+      throw err.conflict('Sudah ada folder dengan nama itu di sini.');
+    }
+  }
+
+  const updated = await drive.rename(env, body.id, name);
+  if (isFolder) await renameFolderRecord(env, body.id, name);
+
+  return json({ item: { id: updated.id, name: updated.name } }, { request, env });
+}
+
+/* --------------------------------------------------------------------------
+   POST /api/share
+   -------------------------------------------------------------------------- */
+
+async function handleShare(request, env, url) {
+  const identity = await requireUser(request, env);
+  const body = await bodyJson(request);
+  const ws = (body.workspace || workspaceOf(request, url) || '').trim().toLowerCase();
+  await getWorkspace(env, ws);
+
+  /* Membagikan tautan mengubah IZIN di Drive, bukan sekadar menyalin URL. Jadi
+     ia diperlakukan sebagai aksi tulis penuh: hanya pemilik ruangnya yang boleh,
+     divalidasi lewat jalur yang sama seperti hapus dan unggah. */
+  const { item } = await assertOwnedItem(env, ws, identity.sub, body.id);
+
+  const shared = await drive.shareAnyone(env, body.id);
+
+  return json(
+    {
+      id: item.id,
+      name: item.name,
+      shareUrl: shared.webViewLink || `https://drive.google.com/open?id=${item.id}`,
+    },
+    { request, env }
+  );
+}
+
+/* --------------------------------------------------------------------------
    DELETE /api/folder/:id · DELETE /api/file/:id
    -------------------------------------------------------------------------- */
 
@@ -427,6 +499,12 @@ export default {
       }
       if (path === '/api/upload' && request.method === 'POST') {
         return await handleUpload(request, env, url);
+      }
+      if (path === '/api/rename' && request.method === 'POST') {
+        return await handleRename(request, env, url);
+      }
+      if (path === '/api/share' && request.method === 'POST') {
+        return await handleShare(request, env, url);
       }
 
       const delFolder = path.match(/^\/api\/folder\/([^/]+)$/);

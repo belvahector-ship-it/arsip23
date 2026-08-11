@@ -257,3 +257,36 @@ export async function assertOwnedFile(env, ws, sub, fileId) {
   await assertOwnedFolder(env, ws, sub, parent);
   return file;
 }
+
+/**
+ * Untuk aksi yang berlaku pada folder MAUPUN berkas (ganti nama, bagikan).
+ *
+ * Jenisnya ditentukan dari `mimeType` yang dijawab Drive, bukan dari yang
+ * disebut client. Kalau client boleh menyebut sendiri jenisnya, ia bisa
+ * mengaku sebuah folder milik orang lain adalah "berkas" untuk melewati jalur
+ * validasi yang berbeda — kelemahan yang tidak terlihat sampai ada yang
+ * mencobanya.
+ */
+export async function assertOwnedItem(env, ws, sub, id) {
+  if (!id || typeof id !== 'string') throw err.validation('Item tidak disebutkan.');
+
+  const item = await drive.get(env, id);
+  if (!item) throw err.notFound('Item tidak ditemukan.');
+
+  if (item.mimeType === drive.FOLDER_MIME) {
+    const rec = await assertOwnedFolder(env, ws, sub, id);
+    if (rec.isRoot) throw err.forbidden('Folder utama Anda tidak bisa diubah.');
+    return { item, isFolder: true, record: rec };
+  }
+
+  const parent = item.parents?.[0];
+  if (!parent) throw err.notFound('Berkas tidak ditemukan.');
+  await assertOwnedFolder(env, ws, sub, parent);
+  return { item, isFolder: false, record: null };
+}
+
+/** Perbarui nama folder di index KV setelah diganti di Drive. */
+export async function renameFolderRecord(env, folderId, name) {
+  const rec = await getFolderRecord(env, folderId);
+  if (rec) await putJson(env, k.folder(folderId), { ...rec, name });
+}

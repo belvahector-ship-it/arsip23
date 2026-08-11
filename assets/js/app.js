@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=3';
-import { api, ApiError, setTokenGetter } from './api.js?v=3';
-import * as auth from './auth.js?v=3';
+import { CONFIG } from './config.js?v=4';
+import { api, ApiError, setTokenGetter } from './api.js?v=4';
+import * as auth from './auth.js?v=4';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,14 +27,13 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=3';
+} from './ui.js?v=4';
 
 setTokenGetter(auth.getToken);
 
 const dom = {
   wsLabel: document.getElementById('ws-label'),
   userArea: document.getElementById('user-area'),
-  noticeBar: document.getElementById('notice-bar'),
   crumbs: document.getElementById('crumbs'),
   count: document.getElementById('count'),
   actions: document.getElementById('actions'),
@@ -42,9 +41,18 @@ const dom = {
   fileInput: document.getElementById('file-input'),
   btnNewFolder: document.getElementById('btn-new-folder'),
   btnUpload: document.getElementById('btn-upload'),
-  modalNotice: document.getElementById('modal-notice'),
-  noticeCheck: document.getElementById('notice-check'),
-  noticeAccept: document.getElementById('notice-accept'),
+  modalGate: document.getElementById('modal-gate'),
+  gateCheck: document.getElementById('gate-check'),
+  gateGoogle: document.getElementById('gate-google'),
+  gateLogin: document.querySelector('.gate__login'),
+  gateStep: document.getElementById('gate-step'),
+  modalRename: document.getElementById('modal-rename'),
+  renameName: document.getElementById('rename-name'),
+  renameHint: document.getElementById('rename-hint'),
+  modalShare: document.getElementById('modal-share'),
+  shareUrl: document.getElementById('share-url'),
+  shareDesc: document.getElementById('share-desc'),
+  shareCopy: document.getElementById('share-copy'),
   modalFolder: document.getElementById('modal-folder'),
   folderName: document.getElementById('folder-name'),
   folderError: document.getElementById('folder-error'),
@@ -159,7 +167,13 @@ function render() {
     frag.append(
       group(
         data.folder.isRoot ? 'Ruang warga' : 'Folder',
-        data.folders.map((f) => folderCard(f, { onDelete: confirmDeleteFolder }))
+        data.folders.map((f) =>
+          folderCard(f, {
+            onDelete: confirmDeleteFolder,
+            onRename: renameItem,
+            onShare: shareItem,
+          })
+        )
       )
     );
   }
@@ -167,7 +181,14 @@ function render() {
     frag.append(
       group(
         'Berkas',
-        data.files.map((f) => fileCard(f, { onDelete: confirmDeleteFile, onPreview: preview }))
+        data.files.map((f) =>
+          fileCard(f, {
+            onDelete: confirmDeleteFile,
+            onPreview: preview,
+            onRename: renameItem,
+            onShare: shareItem,
+          })
+        )
       )
     );
   }
@@ -182,17 +203,11 @@ function render() {
 function renderUserArea() {
   const user = auth.getUser();
 
+  // Tanpa user, header dibiarkan kosong: gerbang sedang menutupi halaman dan
+  // tombol masuknya ada di sana. Dua tombol masuk di dua tempat hanya membuat
+  // bingung soal mana yang "benar".
   if (!user) {
-    const mounted = auth.mountGoogleButton(dom.userArea, onSignedIn);
-    if (!mounted) {
-      const note = document.createElement('span');
-      note.className = 'fs-xs dim';
-      note.textContent = CONFIG.GOOGLE_CLIENT_ID
-        ? 'Tombol masuk Google tidak bisa dimuat.'
-        : 'Login belum dikonfigurasi.';
-      dom.userArea.replaceChildren(note);
-    }
-    dom.noticeBar.hidden = true;
+    dom.userArea.replaceChildren();
     return;
   }
 
@@ -223,91 +238,107 @@ function renderUserArea() {
   out.textContent = 'Keluar';
   out.addEventListener('click', () => {
     auth.signOut();
-    toast('Anda sudah keluar.');
     goTo(null);
-    load();
+    // Keluar berarti kembali ke gerbang: tanpa identitas, arsip memang tidak
+    // bisa ditelusuri lagi.
+    openGate();
   });
 
   frag.append(name, mine, out);
   dom.userArea.replaceChildren(frag);
-
-  renderNoticeBar();
 }
 
-function renderNoticeBar() {
-  const user = auth.getUser();
-  if (!user || user.acceptedNoticeAt) {
-    dom.noticeBar.hidden = true;
-    dom.noticeBar.replaceChildren();
-    return;
+/* --------------------------------------------------------------------------
+   Gerbang: aturan + login wajib
+
+   Ditampilkan saat pengunjung pertama kali membuka situs, atau setelah cache
+   peramban dikosongkan. Selama belum lewat, isi arsip tidak bisa diakses.
+
+   Persetujuannya dicatat di DUA tempat, dan keduanya perlu:
+     - `localStorage` → menentukan apakah gerbang muncul lagi di perangkat ini
+     - KV di server (`acceptedNoticeAt`) → menentukan apakah unggahan diterima
+
+   Kalau hanya localStorage, membersihkan penyimpanan peramban cukup untuk
+   melewati aturan. Kalau hanya server, gerbangnya muncul lagi di setiap
+   perangkat baru meski orangnya sudah pernah setuju — dan server tidak bisa
+   ditanya sebelum user masuk, padahal masuk justru terjadi DI DALAM gerbang.
+   -------------------------------------------------------------------------- */
+
+const GATE_KEY = 'arsip23:gateAccepted';
+
+function gateAcceptedLocally() {
+  try {
+    return localStorage.getItem(GATE_KEY) === '1';
+  } catch {
+    return false; // penyimpanan diblokir → gerbang muncul tiap kali, dan itu benar
   }
-
-  const inner = document.createElement('div');
-  inner.className = 'notice-bar__inner';
-
-  const text = document.createElement('p');
-  text.className = 'flex-1';
-  text.textContent =
-    'Arsip ini bisa dilihat publik. Baca aturan unggah sebelum mengirim berkas pertama Anda.';
-
-  const btn = document.createElement('button');
-  btn.className = 'btn';
-  btn.type = 'button';
-  btn.textContent = 'Baca Aturan';
-  btn.addEventListener('click', showNotice);
-
-  inner.append(text, btn);
-  dom.noticeBar.className = 'notice-bar';
-  dom.noticeBar.replaceChildren(inner);
-  dom.noticeBar.hidden = false;
 }
 
-async function onSignedIn() {
+function rememberGate() {
+  try {
+    localStorage.setItem(GATE_KEY, '1');
+  } catch {
+    /* diabaikan */
+  }
+}
+
+/**
+ * Kunci sebuah <dialog> supaya tidak bisa ditutup dengan Esc maupun klik luar.
+ *
+ * `showModal()` selalu memberi user jalan keluar lewat Esc — itu memang perilaku
+ * yang benar untuk dialog biasa, tapi salah untuk gerbang yang justru ada agar
+ * tidak bisa dilewati. Peristiwa `cancel` adalah satu-satunya tempat Esc bisa
+ * dicegat.
+ */
+function sealDialog(dialog) {
+  dialog.addEventListener('cancel', (e) => e.preventDefault());
+}
+sealDialog(dom.modalGate);
+
+function syncGateStep() {
+  const checked = dom.gateCheck.checked;
+  dom.gateLogin.dataset.locked = checked ? 'false' : 'true';
+  dom.gateStep.textContent = checked
+    ? 'Langkah 2 — masuk dengan akun Google Anda:'
+    : 'Centang persetujuan di atas dulu untuk melanjutkan.';
+}
+
+dom.gateCheck.addEventListener('change', syncGateStep);
+
+function openGate() {
+  syncGateStep();
+  if (!dom.modalGate.open) dom.modalGate.showModal();
+
+  // Tombol Google dipasang DI DALAM gerbang, bukan di header, supaya tidak ada
+  // dua tempat berbeda untuk masuk.
+  auth.mountGoogleButton(dom.gateGoogle, onGatePassed);
+}
+
+function closeGate() {
+  if (dom.modalGate.open) dom.modalGate.close();
+}
+
+/** Dipanggil setelah user memilih akun Google di dalam gerbang. */
+async function onGatePassed() {
   try {
     const { user } = await api.login();
     auth.setUser(user);
+
+    // Persetujuan dikirim ke server sekarang — user sudah punya identitas, dan
+    // kotak centangnya syarat untuk sampai ke sini.
+    if (!user.acceptedNoticeAt) {
+      const { acceptedNoticeAt } = await api.acceptNotice();
+      auth.setUser({ ...user, acceptedNoticeAt });
+    }
+    rememberGate();
+    closeGate();
+
     toast(`Selamat datang, ${user.displayName}.`, 'ok');
     goTo(user.rootFolderId);
-    // Kalau hash-nya kebetulan sudah sama, `hashchange` tidak akan menyala —
-    // jadi pemuatan ulang dipanggil sendiri.
     await load();
   } catch (e) {
     handle(e);
   }
-}
-
-/* --------------------------------------------------------------------------
-   Aturan unggah
-   -------------------------------------------------------------------------- */
-
-dom.noticeCheck.addEventListener('change', () => {
-  dom.noticeAccept.disabled = !dom.noticeCheck.checked;
-});
-
-async function showNotice() {
-  dom.noticeCheck.checked = false;
-  dom.noticeAccept.disabled = true;
-
-  const result = await openModal(dom.modalNotice);
-  if (result !== 'accept') return false;
-
-  try {
-    const { acceptedNoticeAt } = await api.acceptNotice();
-    auth.setUser({ ...auth.getUser(), acceptedNoticeAt });
-    toast('Terima kasih. Anda sudah bisa mengunggah.', 'ok');
-    return true;
-  } catch (e) {
-    handle(e);
-    return false;
-  }
-}
-
-/** Pastikan aturan sudah disetujui; tampilkan modalnya kalau belum. */
-async function ensureNoticeAccepted() {
-  const user = auth.getUser();
-  if (!user) return false;
-  if (user.acceptedNoticeAt) return true;
-  return showNotice();
 }
 
 /* --------------------------------------------------------------------------
@@ -343,8 +374,10 @@ async function newFolder() {
    Unggah
    -------------------------------------------------------------------------- */
 
-async function startUpload() {
-  if (!(await ensureNoticeAccepted())) return;
+function startUpload() {
+  // Persetujuan aturan sudah dijamin oleh gerbang, dan tetap divalidasi ulang
+  // di server pada setiap unggahan (SPEC.md §9).
+  if (!auth.getUser()) return;
   dom.fileInput.value = '';   // supaya memilih berkas yang sama dua kali tetap memicu `change`
   dom.fileInput.click();
 }
@@ -405,6 +438,82 @@ dom.fileInput.addEventListener('change', async () => {
   if (uploaded > 0) {
     toast(`${uploaded} berkas berhasil diunggah.`, 'ok');
     await load();
+  }
+});
+
+/* --------------------------------------------------------------------------
+   Ganti nama
+   -------------------------------------------------------------------------- */
+
+async function renameItem(item) {
+  const isFolder = item.itemCount !== undefined;
+
+  dom.renameName.value = item.name;
+  dom.renameHint.textContent = isFolder
+    ? ''
+    : 'Ekstensi berkas (.pdf, .jpg) dipertahankan otomatis.';
+
+  const opened = openModal(dom.modalRename);
+  // Sorot nama tanpa ekstensinya: yang hampir selalu ingin diganti adalah
+  // bagian namanya, bukan ".pdf"-nya.
+  const dot = isFolder ? -1 : item.name.lastIndexOf('.');
+  dom.renameName.focus();
+  dom.renameName.setSelectionRange(0, dot > 0 ? dot : item.name.length);
+
+  if ((await opened) !== 'save') return;
+
+  const name = dom.renameName.value.trim();
+  if (!name || name === item.name) return;
+
+  try {
+    const res = await api.rename(item.id, name);
+    toast(`Nama diubah jadi "${res.item.name}".`, 'ok');
+    await load();
+  } catch (e) {
+    handle(e);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Bagikan tautan
+   -------------------------------------------------------------------------- */
+
+async function shareItem(item) {
+  const isFolder = item.itemCount !== undefined;
+
+  dom.shareDesc.textContent = `Membuat tautan untuk ${isFolder ? 'folder' : 'berkas'} "${item.name}"…`;
+  dom.shareUrl.value = '';
+  dom.shareCopy.disabled = true;
+
+  const opened = openModal(dom.modalShare);
+
+  try {
+    const res = await api.share(item.id);
+    dom.shareUrl.value = res.shareUrl;
+    dom.shareDesc.textContent = `Tautan untuk ${isFolder ? 'folder' : 'berkas'} "${res.name}":`;
+    dom.shareCopy.disabled = false;
+  } catch (e) {
+    dom.shareDesc.textContent = e.message || 'Gagal membuat tautan.';
+    handle(e);
+  }
+
+  await opened;
+}
+
+dom.shareCopy.addEventListener('click', async () => {
+  const url = dom.shareUrl.value;
+  if (!url) return;
+
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Tautan disalin.', 'ok');
+  } catch {
+    /* `navigator.clipboard` butuh HTTPS dan izin, dan tidak selalu ada di
+       peramban HP yang lebih tua. Menyorot teksnya membuat user tetap bisa
+       menyalin manual — lebih baik daripada tombol yang diam saja. */
+    dom.shareUrl.focus();
+    dom.shareUrl.select();
+    toast('Tekan lama lalu pilih "Salin".');
   }
 });
 
@@ -514,12 +623,27 @@ auth.onChange(() => {
     }
   }
 
-  // Arsip dimuat dan TIDAK menunggu Google: menelusuri arsip tidak butuh login,
-  // jadi skrip Google yang lambat atau diblokir tidak boleh menahan halaman ini
-  // kosong.
-  load();
+  if (restored) {
+    load();
+    return;
+  }
 
+  /* Belum masuk → gerbang. Isi arsip TIDAK dimuat lebih dulu: memuatnya hanya
+     untuk langsung ditutupi dialog berarti membocorkan sekilas isi arsip ke
+     orang yang belum menyetujui aturan, sekaligus memboroskan permintaan yang
+     pasti diulang setelah login. */
   const ready = await auth.whenGoogleReady();
-  if (!ready) console.warn('[arsip23] Google Identity Services tidak termuat.');
-  if (!restored) renderUserArea();
+  if (!ready) {
+    console.warn('[arsip23] Google Identity Services tidak termuat.');
+    // Tanpa Google, gerbang tidak bisa dilewati. Katakan apa adanya daripada
+    // menampilkan dialog dengan ruang tombol yang kosong tanpa penjelasan.
+    dom.gateGoogle.textContent =
+      'Tombol masuk Google tidak bisa dimuat. Periksa koneksi Anda, lalu muat ulang halaman ini.';
+  }
+  openGate();
+
+  // Belum ada yang perlu ditampilkan di balik gerbang; `load()` dijalankan
+  // setelah login di `onGatePassed()`.
+  dom.count.textContent = '';
+  dom.explorer.replaceChildren();
 })();

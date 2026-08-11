@@ -51,42 +51,57 @@ export function renderCrumbs(container, crumbs) {
    Kartu
    -------------------------------------------------------------------------- */
 
-function svgTrash() {
+function svgPath(d, size = 18) {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('width', '18');
-  svg.setAttribute('height', '18');
+  svg.setAttribute('width', String(size));
+  svg.setAttribute('height', String(size));
   svg.setAttribute('aria-hidden', 'true');
-  for (const d of ['M4 6h16', 'M9 6V4h6v2', 'M6 6l1 14h10l1-14', 'M10 10v7', 'M14 10v7']) {
+  for (const seg of [].concat(d)) {
     const p = document.createElementNS(ns, 'path');
-    p.setAttribute('d', d);
+    p.setAttribute('d', seg);
     p.setAttribute('fill', 'none');
     p.setAttribute('stroke', 'currentColor');
     p.setAttribute('stroke-width', '2');
+    p.setAttribute('stroke-linecap', 'round');
     svg.append(p);
   }
   return svg;
 }
 
-/* Ikon tong sampah, bukan tanda silang. Satu-satunya aksi di kartu ini adalah
-   menghapus, jadi menu titik-tiga berisi satu item cuma menambah satu ketukan
-   tanpa memberi pilihan apa pun. Tapi "×" juga salah: di pojok kanan atas
-   sebuah kotak, tanda itu dibaca sebagai "tutup/sembunyikan" — jarak antara
-   "menyembunyikan kartu" dan "menghapus foto kegiatan selamanya" terlalu jauh
-   untuk diserahkan ke tebakan. */
-function menuButton(label, onClick) {
-  const btn = el('button', 'card__menu');
+const ICON = {
+  share: ['M9 13a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7l-1 1', 'M15 11a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 5.7 5.7l1-1'],
+  rename: ['M4 20h4l10-10a2.8 2.8 0 0 0-4-4L4 16v4z', 'M13.5 6.5l4 4'],
+  trash: ['M4 6h16', 'M9 6V4h6v2', 'M6 6l1 14h10l1-14', 'M10 10v7', 'M14 10v7'],
+};
+
+/* Ikon, bukan teks: ruang di pojok kartu tidak cukup untuk tiga label, dan
+   "×" sengaja dihindari untuk hapus — di pojok kanan atas sebuah kotak, tanda
+   itu dibaca sebagai "tutup/sembunyikan", dan jarak antara menyembunyikan
+   kartu dan menghapus foto kegiatan selamanya terlalu jauh untuk ditebak.
+   Setiap tombol tetap punya `title` + `aria-label` yang lengkap. */
+function iconButton(icon, label, onClick, { danger = false } = {}) {
+  const btn = el('button', `card__menu${danger ? ' card__menu--danger' : ''}`);
   btn.type = 'button';
   btn.title = label;
   btn.setAttribute('aria-label', label);
-  btn.append(svgTrash());
+  btn.append(svgPath(ICON[icon]));
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     onClick();
   });
   return btn;
+}
+
+/** Deretan aksi pemilik: bagikan · ganti nama · hapus. */
+function actionsRow(target, { onShare, onRename, onDelete }, kindLabel) {
+  const row = el('div', 'card__actions');
+  if (onShare) row.append(iconButton('share', `Bagikan tautan ${kindLabel} ${target.name}`, () => onShare(target)));
+  if (onRename) row.append(iconButton('rename', `Ganti nama ${kindLabel} ${target.name}`, () => onRename(target)));
+  if (onDelete) row.append(iconButton('trash', `Hapus ${kindLabel} ${target.name}`, () => onDelete(target), { danger: true }));
+  return row.children.length ? row : null;
 }
 
 /** Lapisan tak terlihat yang membuat seluruh kartu bisa ditekan. */
@@ -104,7 +119,7 @@ function hitLayer(label, { href, onClick } = {}) {
   return node;
 }
 
-export function folderCard(folder, { onDelete }) {
+export function folderCard(folder, { onDelete, onRename, onShare }) {
   const card = el('article', 'card');
 
   const icon = el('div', 'card__icon');
@@ -124,16 +139,20 @@ export function folderCard(folder, { onDelete }) {
     hitLayer(`Buka folder ${folder.name}`, { href: `#/f/${encodeURIComponent(folder.id)}` })
   );
 
-  // `canDelete` dipisah dari `isMine`: folder root warga memang miliknya, tapi
-  // tidak boleh dihapus. Kalau server tidak mengirim `canDelete` (versi lama),
-  // jatuh kembali ke `isMine`.
-  if ((folder.canDelete ?? folder.isMine) && onDelete) {
-    card.append(menuButton(`Hapus folder ${folder.name}`, () => onDelete(folder)));
-  }
+  /* `canDelete` dipisah dari `isMine`: folder root warga memang miliknya, tapi
+     tidak boleh dihapus — dan karena alasan yang sama tidak boleh diganti nama
+     (namanya berasal dari nama akun Google-nya) maupun dibagikan sebagai satu
+     tautan (isinya bisa memuat kegiatan yang tidak ingin ia bagikan sekaligus). */
+  const boleh = folder.canDelete ?? folder.isMine;
+  const row = boleh
+    ? actionsRow(folder, { onShare, onRename, onDelete }, 'folder')
+    : null;
+  if (row) card.append(row);
+
   return card;
 }
 
-export function fileCard(file, { onDelete, onPreview }) {
+export function fileCard(file, { onDelete, onPreview, onRename, onShare }) {
   const card = el('article', 'card');
 
   if (file.isImage && file.thumbnailUrl) {
@@ -168,8 +187,9 @@ export function fileCard(file, { onDelete, onPreview }) {
     card.append(link);
   }
 
-  if (file.isMine && onDelete) {
-    card.append(menuButton(`Hapus berkas ${file.name}`, () => onDelete(file)));
+  if (file.isMine) {
+    const row = actionsRow(file, { onShare, onRename, onDelete }, 'berkas');
+    if (row) card.append(row);
   }
   return card;
 }

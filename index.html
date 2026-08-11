@@ -22,9 +22,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=3">
-<link rel="stylesheet" href="assets/css/base.css?v=3">
-<link rel="stylesheet" href="assets/css/app.css?v=3">
+<link rel="stylesheet" href="assets/css/tokens.css?v=4">
+<link rel="stylesheet" href="assets/css/base.css?v=4">
+<link rel="stylesheet" href="assets/css/app.css?v=4">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -48,8 +48,6 @@
     </div>
   </div>
 </header>
-
-<div id="notice-bar" hidden></div>
 
 <main class="site-main" id="isi">
   <div class="container">
@@ -87,36 +85,45 @@
 <div class="uploads" id="uploads" aria-live="polite"></div>
 <div class="toasts" id="toasts" aria-live="assertive" role="status"></div>
 
-<!-- ===================== Modal: aturan unggah ===================== -->
-<dialog class="modal" id="modal-notice" aria-labelledby="notice-title">
-  <form method="dialog">
-    <div class="modal__head modal__head--danger" id="notice-title">Aturan sebelum mengunggah</div>
-    <div class="modal__body">
-      <p><strong>Arsip ini bisa dilihat oleh siapa saja.</strong> Ini bukan
-        penyimpanan pribadi. Apa pun yang Anda unggah dapat dibuka oleh warga
-        lain maupun pengunjung.</p>
-      <p>Karena itu, dilarang mengunggah:</p>
-      <ul class="modal__list">
-        <li>Konten yang melanggar kesusilaan, ketelanjangan, atau pornografi.</li>
-        <li>Konten bermuatan SARA, kebencian, atau kekerasan.</li>
-        <li>Foto pribadi orang lain tanpa izin yang bersangkutan.</li>
-        <li>Dokumen yang memuat data pribadi orang lain (KTP, KK, nomor rekening).</li>
-        <li>Apa pun yang melanggar ketentuan hukum yang berlaku di Indonesia.</li>
-      </ul>
-      <p class="fs-sm dim">Tanggung jawab atas isi unggahan berada pada masing-masing
-        pengunggah. Pengelola dapat menghapus konten yang melanggar aturan ini.</p>
-      <label class="checkbox">
-        <input type="checkbox" id="notice-check">
-        <span>Saya sudah membaca dan menyetujui aturan di atas.</span>
-      </label>
+<!-- ===================== Gerbang: aturan + login wajib =====================
+     Dialog ini TERKUNCI: tidak ada tombol tutup, tidak bisa ditutup dengan Esc
+     atau klik di luar (lihat `sealDialog()` di app.js). Selama belum disetujui
+     DAN belum masuk, isi arsip tidak bisa diakses sama sekali.
+
+     Tidak memakai <form method="dialog"> seperti modal lain, justru supaya
+     tidak ada satu pun kontrol bawaan yang bisa menutupnya secara tak sengaja. -->
+<dialog class="modal modal--gate" id="modal-gate" aria-labelledby="gate-title">
+  <div class="modal__head modal__head--danger" id="gate-title">
+    Aturan &amp; Persetujuan
+  </div>
+  <div class="modal__body">
+    <p><strong>Arsip23 adalah arsip dokumentasi kegiatan warga.</strong> Untuk
+      membukanya, Anda perlu membaca aturan di bawah dan masuk dengan akun
+      Google.</p>
+
+    <p>Apa pun yang diunggah ke sini dapat dilihat oleh warga lain. Karena itu,
+      <strong>dilarang mengunggah</strong>:</p>
+    <ul class="modal__list">
+      <li>Konten yang melanggar kesusilaan, ketelanjangan, atau pornografi.</li>
+      <li>Konten bermuatan SARA, kebencian, atau kekerasan.</li>
+      <li>Foto pribadi orang lain tanpa izin yang bersangkutan.</li>
+      <li>Dokumen yang memuat data pribadi orang lain (KTP, KK, nomor rekening).</li>
+      <li>Apa pun yang melanggar ketentuan hukum yang berlaku di Indonesia.</li>
+    </ul>
+    <p class="fs-sm dim">Tanggung jawab atas isi unggahan berada pada
+      masing-masing pengunggah. Pengelola dapat menghapus konten yang melanggar
+      aturan ini.</p>
+
+    <label class="checkbox">
+      <input type="checkbox" id="gate-check">
+      <span>Saya sudah membaca dan menyetujui aturan di atas.</span>
+    </label>
+
+    <div class="gate__login">
+      <p class="gate__step" id="gate-step">Langkah 2 — masuk dengan akun Google Anda:</p>
+      <div id="gate-google"></div>
     </div>
-    <div class="modal__foot">
-      <button class="btn btn--ghost" value="cancel" type="submit">Batal</button>
-      <button class="btn btn--primary" id="notice-accept" value="accept" type="submit" disabled>
-        Saya Mengerti
-      </button>
-    </div>
-  </form>
+  </div>
 </dialog>
 
 <!-- ===================== Modal: folder baru ===================== -->
@@ -134,6 +141,45 @@
     <div class="modal__foot">
       <button class="btn btn--ghost" value="cancel" type="submit">Batal</button>
       <button class="btn btn--primary" value="create" type="submit">Buat Folder</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ===================== Modal: ganti nama ===================== -->
+<dialog class="modal" id="modal-rename" aria-labelledby="rename-title">
+  <form method="dialog" id="rename-form">
+    <div class="modal__head" id="rename-title">Ganti nama</div>
+    <div class="modal__body">
+      <div class="field">
+        <label class="field__label" for="rename-name">Nama baru</label>
+        <input class="field__input" id="rename-name" name="name" maxlength="100" autocomplete="off">
+        <p class="field__error" id="rename-hint"></p>
+      </div>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" value="cancel" type="submit">Batal</button>
+      <button class="btn btn--primary" value="save" type="submit">Simpan</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ===================== Modal: bagikan tautan ===================== -->
+<dialog class="modal" id="modal-share" aria-labelledby="share-title">
+  <form method="dialog">
+    <div class="modal__head" id="share-title">Tautan berbagi</div>
+    <div class="modal__body">
+      <p id="share-desc" class="fs-sm"></p>
+      <div class="share-row">
+        <input class="field__input" id="share-url" readonly>
+        <button class="btn btn--primary" id="share-copy" type="button">Salin</button>
+      </div>
+      <p class="fs-xs dim">
+        Siapa pun yang punya tautan ini bisa <strong>melihat dan mengunduh</strong>,
+        tanpa perlu akun Google. Mereka tidak bisa mengubah atau menghapusnya.
+      </p>
+    </div>
+    <div class="modal__foot">
+      <button class="btn btn--ghost" value="close" type="submit">Tutup</button>
     </div>
   </form>
 </dialog>
@@ -165,6 +211,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=3"></script>
+<script type="module" src="assets/js/app.js?v=4"></script>
 </body>
 </html>

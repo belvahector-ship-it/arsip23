@@ -6,7 +6,7 @@
    dengan `res.ok`, status code, atau JSON mentah.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=3';
+import { CONFIG } from './config.js?v=4';
 
 export class ApiError extends Error {
   constructor(code, message, status) {
@@ -135,6 +135,20 @@ export const api = {
     form.set('file', file, file.name);
     return request('/api/upload', { method: 'POST', auth: true, body: form, isForm: true });
   },
+
+  rename: (id, name) =>
+    request('/api/rename', {
+      method: 'POST',
+      auth: true,
+      body: { workspace: CONFIG.WORKSPACE_ID, id, name },
+    }),
+
+  share: (id) =>
+    request('/api/share', {
+      method: 'POST',
+      auth: true,
+      body: { workspace: CONFIG.WORKSPACE_ID, id },
+    }),
 
   deleteFolder: (id) =>
     request(`/api/folder/${encodeURIComponent(id)}`, { method: 'DELETE', auth: true }),
