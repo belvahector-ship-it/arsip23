@@ -660,6 +660,17 @@ html.has-locked-scroll { overflow: hidden; }
    terbaca sebagai urutan, bukan dua pilihan sejajar. */
 .gate__login[data-locked='true'] { opacity: 0.4; pointer-events: none; }
 
+/* Status tombol Google (memuat.../gagal): teks kecil bukan tebal, supaya
+   tidak dibaca sebagai galat fatal — kegagalan ini biasanya cuma jaringan
+   RT yang lambat, dan "Coba Lagi" di sebelahnya cukup untuk pulih. */
+.gate__google-status { font-size: var(--fs-sm); color: var(--ink-3); }
+
+/* Tinggi minimum sebesar tombol Google yang sesungguhnya (size='large'):
+   tanpa ini, badan gerbang "melompat" begitu iframe akhirnya tergambar
+   menggantikan teks status yang lebih pendek — dan isyarat gulir sempat
+   salah menghitung berapa banyak sisa yang perlu digulir. */
+#gate-google { min-height: 44px; }
+
 /* --- Baris tautan berbagi ------------------------------------------------ */
 
 .share-row {

@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=8';
-import { api, ApiError, setTokenGetter } from './api.js?v=8';
-import * as auth from './auth.js?v=8';
+import { CONFIG } from './config.js?v=9';
+import { api, ApiError, setTokenGetter } from './api.js?v=9';
+import * as auth from './auth.js?v=9';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,7 +27,7 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=8';
+} from './ui.js?v=9';
 
 setTokenGetter(auth.getToken);
 
@@ -343,6 +343,62 @@ window.addEventListener('resize', () => {
 // sumber mana pun, tanpa perlu menebak urutan/waktunya satu per satu.
 new ResizeObserver(syncGateScrollCue).observe(dom.gateBody);
 
+/**
+ * Memasang tombol Google DENGAN status kelihatan di setiap tahap — bukan cuma
+ * "berhasil" atau "diam saja". Alasannya ada di komentar panjang
+ * `mountGoogleButton()`/`watchButtonRendered()` di auth.js: renderButton()
+ * bisa "berhasil" dipanggil di jaringan RT yang lambat tanpa iframe-nya
+ * pernah benar-benar tergambar, dan sebelum perbaikan ini itu artinya warga
+ * cuma melihat ruang kosong tanpa penjelasan atau jalan keluar selain
+ * memuat ulang seluruh halaman.
+ */
+async function mountGoogleButtonWithFallback() {
+  dom.gateGoogle.replaceChildren();
+  const loading = document.createElement('p');
+  loading.className = 'gate__google-status';
+  loading.textContent = 'Memuat tombol masuk Google…';
+  dom.gateGoogle.append(loading);
+
+  // Menunggu di sini, bukan sebelum gerbang dibuka: aturan & kotak centang
+  // tidak butuh Google sama sekali, jadi tidak ada alasan menahan tampilnya
+  // gerbang hanya karena skrip GIS belum selesai dimuat.
+  const ready = await auth.whenGoogleReady();
+  // Gerbang bisa saja sudah ditutup (user berhasil masuk lewat percobaan
+  // lain) selama menunggu di atas — jangan menimpa apa pun kalau begitu.
+  if (!dom.modalGate.open) return;
+
+  if (!ready) {
+    showGoogleButtonStuck('Tombol masuk Google tidak bisa dimuat. Periksa koneksi Anda.');
+    return;
+  }
+
+  const frame = auth.mountGoogleButton(dom.gateGoogle, onGatePassed);
+  if (!frame) {
+    showGoogleButtonStuck('Tombol masuk Google tidak bisa dimuat. Periksa koneksi Anda.');
+    return;
+  }
+
+  auth.watchButtonRendered(frame, () => {
+    if (dom.modalGate.open) {
+      showGoogleButtonStuck('Tombol masuk Google belum muncul — koneksi mungkin lambat.');
+    }
+  });
+}
+
+function showGoogleButtonStuck(message) {
+  const status = document.createElement('p');
+  status.className = 'gate__google-status';
+  status.textContent = message;
+
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'btn';
+  retry.textContent = 'Coba Lagi';
+  retry.addEventListener('click', mountGoogleButtonWithFallback);
+
+  dom.gateGoogle.replaceChildren(status, retry);
+}
+
 function openGate() {
   syncGateStep();
   if (!dom.modalGate.open) dom.modalGate.showModal();
@@ -356,7 +412,7 @@ function openGate() {
 
   // Tombol Google dipasang DI DALAM gerbang, bukan di header, supaya tidak ada
   // dua tempat berbeda untuk masuk.
-  auth.mountGoogleButton(dom.gateGoogle, onGatePassed);
+  mountGoogleButtonWithFallback();
 
   syncGateScrollCue();
 }
@@ -680,15 +736,12 @@ auth.onChange(() => {
   /* Belum masuk → gerbang. Isi arsip TIDAK dimuat lebih dulu: memuatnya hanya
      untuk langsung ditutupi dialog berarti membocorkan sekilas isi arsip ke
      orang yang belum menyetujui aturan, sekaligus memboroskan permintaan yang
-     pasti diulang setelah login. */
-  const ready = await auth.whenGoogleReady();
-  if (!ready) {
-    console.warn('[arsip23] Google Identity Services tidak termuat.');
-    // Tanpa Google, gerbang tidak bisa dilewati. Katakan apa adanya daripada
-    // menampilkan dialog dengan ruang tombol yang kosong tanpa penjelasan.
-    dom.gateGoogle.textContent =
-      'Tombol masuk Google tidak bisa dimuat. Periksa koneksi Anda, lalu muat ulang halaman ini.';
-  }
+     pasti diulang setelah login.
+
+     Menunggu GIS di sini TIDAK diperlukan lagi — `openGate()` ->
+     `mountGoogleButtonWithFallback()` menunggu dan menangani sendiri
+     ketiadaan/keterlambatannya, lengkap dengan tombol "Coba Lagi" tanpa
+     memaksa muat ulang seluruh halaman. */
   openGate();
 
   // Belum ada yang perlu ditampilkan di balik gerbang; `load()` dijalankan

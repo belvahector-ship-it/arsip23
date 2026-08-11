@@ -22,7 +22,7 @@
    komputer bersama. Token juga tetap berumur ±1 jam dari Google.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=8';
+import { CONFIG } from './config.js?v=9';
 
 const STORAGE_KEY = 'arsip23:idToken';
 
@@ -124,7 +124,18 @@ function expiryOf(idToken) {
  * Pasang tombol Google. `onCredential` dipanggil setelah user memilih akun.
  * Mengembalikan false kalau GIS tidak tersedia — pemanggil yang memutuskan
  * apa yang ditampilkan sebagai gantinya.
- */
+ *
+ * `window.google.accounts.id` yang sudah ADA (dicek oleh `whenGoogleReady()`
+ * sebelum fungsi ini dipanggil) hanya berarti skrip inti GIS yang kecil
+ * sudah termuat — `renderButton()` di bawah masih memicu permintaan jaringan
+ * KEDUA dan TERPISAH ke accounts.google.com untuk menggambar iframe tombol
+ * yang sesungguhnya, dan fungsi ini kembali sebelum permintaan itu selesai.
+ * Di jaringan RT yang lambat/putus-putus, itu berarti `renderButton()` bisa
+ * "berhasil" dipanggil tapi iframe-nya tidak pernah benar-benar tergambar —
+ * tanpa galat apa pun untuk ditangkap di sisi kita. Karena itu fungsi ini
+ * TIDAK menjanjikan tombolnya sudah kelihatan, cuma bahwa permintaannya
+ * sudah dikirim; pemanggil yang memasang pengawal `watchButtonRendered()` di
+ * bawah untuk tahu kalau iframe itu tidak kunjung muncul. */
 export function mountGoogleButton(container, onCredential) {
   if (!CONFIG.GOOGLE_CLIENT_ID) {
     console.warn('[arsip23] GOOGLE_CLIENT_ID belum diisi di assets/js/config.js');
@@ -154,7 +165,32 @@ export function mountGoogleButton(container, onCredential) {
     text: 'signin_with',
     locale: 'id',
   });
-  return true;
+  return frame;
+}
+
+/**
+ * Mengawasi apakah iframe tombol Google BENAR-BENAR muncul di dalam `frame`
+ * (lihat komentar `mountGoogleButton` di atas soal kenapa "renderButton
+ * dipanggil" tidak sama dengan "tombolnya kelihatan"). Memanggil `onStuck`
+ * kalau tidak muncul dalam `timeoutMs` — pemanggil yang memutuskan
+ * bagaimana menawarkan coba-lagi ke warga.
+ */
+export function watchButtonRendered(frame, onStuck, timeoutMs = 6000) {
+  let settled = false;
+  const timer = setTimeout(() => {
+    if (settled) return;
+    settled = true;
+    observer.disconnect();
+    onStuck();
+  }, timeoutMs);
+
+  const observer = new MutationObserver(() => {
+    if (settled || !frame.querySelector('iframe')) return;
+    settled = true;
+    clearTimeout(timer);
+    observer.disconnect();
+  });
+  observer.observe(frame, { childList: true, subtree: true });
 }
 
 /**
