@@ -1,15 +1,23 @@
 /* ==========================================================================
-   BASE — reset, tipografi, primitif tata letak, utilitas tanda tangan BRUTAL
+   BASE — reset, tipografi, primitif tata letak, utilitas tanda tangan tema
    ========================================================================== */
 
 *, *::before, *::after { box-sizing: border-box; }
 
 * { margin: 0; }
 
-/* Aturan emas tema ini: TIDAK ADA sudut membulat di mana pun. Reset global
-   ini menangkap juga elemen yang radiusnya datang dari user-agent (input,
-   button, select di Safari/iOS) — bukan cuma komponen kita sendiri. */
-*, *::before, *::after { border-radius: 0; }
+/* Tema BRUTAL memasang reset `*, *::before, *::after { border-radius: 0 }`
+   di sini untuk menangkap radius bawaan user-agent (input/button/select di
+   Safari/iOS). Reset itu DIHAPUS, bukan diganti nilainya jadi 16px: sebuah
+   selector universal akan membulatkan JUGA elemen yang seharusnya persegi
+   (thumbnail di dalam kartu yang sudah punya radius sendiri, sel tabel,
+   bilah progres) — dan karena kekhususannya nol, tiap komponen jadi harus
+   menyatakan ulang radiusnya sendiri hanya untuk membatalkannya.
+
+   Yang menggantikannya: radius dipasang per komponen lewat --r-*, dan hanya
+   kontrol form di bawah ini yang dinormalkan, karena hanya di situlah
+   user-agent benar-benar memaksakan nilai sendiri. */
+input, textarea, select, button { border-radius: var(--r-sm); }
 
 html {
   /* 106.25% dari 16px = 17px (CP-06, demi warga sepuh) */
@@ -65,10 +73,14 @@ table { border-collapse: collapse; width: 100%; }
 /* --- Tipografi ------------------------------------------------------------
    Archivo bobot 800 untuk semua judul — cukup tebal untuk terbaca tegas,
    tapi bentuk hurufnya tetap grotesque biasa yang mudah dikenali, bukan
-   font display bergaya. Huruf kapital TIDAK dipasang di sini: hanya label
-   pendek (eyebrow, lencana, tombol, kepala tabel) yang di-uppercase, karena
-   teks kapital menghilangkan bentuk-kata yang justru jadi pegangan utama
-   pembaca sepuh. Judul dan kalimat memakai kapitalisasi biasa. */
+   font display bergaya.
+
+   Spesifikasi bagian 6 menyebut huruf kapital pada judul "memberi kesan
+   ketegasan". Itu diterapkan TERBATAS: hanya label pendek (eyebrow, lencana,
+   tombol, kepala tabel, judul kelompok) dan judul hero yang di-uppercase.
+   Judul dan kalimat panjang tetap kapitalisasi biasa, karena teks kapital
+   menghilangkan bentuk-kata yang justru jadi pegangan utama pembaca sepuh —
+   dan pembaca itu (CP-06) yang menentukan batasnya, bukan spesifikasinya. */
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
@@ -131,14 +143,17 @@ strong, b { font-weight: 700; }
 
 .eyebrow--accent { color: var(--accent); }
 
-/* Eyebrow sebagai LENCANA — kotak kuning berbingkai hitam, wujud "CREATIVE
-   AGENCY" di spesifikasi. Dipakai untuk penanda paling penting saja. */
+/* Eyebrow sebagai LENCANA PIL — amber berbingkai charcoal dengan sudut
+   penuh bulat. Bentuk pil (bukan kotak seperti tema lama) adalah wujud
+   "highlight badge" di spesifikasi bagian 5B. Dipakai untuk penanda paling
+   penting saja. */
 .eyebrow--badge {
   display: inline-block;
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
   background: var(--highlight);
   color: var(--highlight-ink);
   border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-pill);
   box-shadow: var(--sh-1);
 }
 
@@ -157,29 +172,35 @@ strong, b { font-weight: 700; }
 .muted { color: var(--ink-2); }
 .dim   { color: var(--ink-3); }
 
-.text-pos { color: var(--accent); }
+.text-pos { color: var(--success-ink); }
 .text-neg { color: var(--critical-ink); }
 
-/* --- Sorotan blok (efek stabilo) ------------------------------------------
-   Pola tanda tangan spesifikasi: kata kunci di dalam judul diberi latar
-   warna solid, seperti dicoret stabilo. Selalu dipakai pada teks BESAR —
-   putih di atas #FF0000 hanya 4.0:1, yang lulus AA untuk teks besar saja.
-   Untuk teks berukuran normal, pakai .highlight-yellow (hitam di atas
-   kuning, 19.6:1) yang aman di ukuran berapa pun. */
+/* --- Sorotan blok (pil penyorot) -------------------------------------------
+   Pola tanda tangan spesifikasi bagian 5B: frasa kunci di dalam judul
+   dibungkus PIL berwarna, bukan sekadar dicoret stabilo persegi seperti tema
+   lama. Radius penuh + padding horizontal lebih lebar itulah yang membedakan
+   "soft neubrutalism" dari brutalism di level detail terkecil.
+
+   Kontras dijaga pada masing-masing pasangan: putih di atas #EF4444 (3.76:1)
+   dan di atas #0EA5E9 (2.9:1) hanya lulus AA untuk teks BESAR — jadi kedua
+   varian itu tidak boleh dipakai di luar judul. .highlight-yellow (charcoal
+   di atas amber, 12.9:1) aman di ukuran berapa pun, dan itulah sebabnya ia
+   yang dipakai sebagai penyorot utama tema ini. */
 
 .highlight-red,
 .highlight-blue,
 .highlight-yellow {
-  padding: 0 0.18em;
+  padding: 0.05em 0.4em;
+  border-radius: var(--r-pill);
   /* box-decoration-break menjaga latar tetap utuh ketika judul patah baris —
      tanpa ini, potongan kedua kehilangan padding kirinya. */
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
-.highlight-red    { background: var(--brutal-red);    color: #FFFFFF; }
-.highlight-blue   { background: var(--brutal-blue);   color: #FFFFFF; }
-.highlight-yellow { background: var(--brutal-yellow); color: var(--ink); }
+.highlight-red    { background: var(--accent-red);   color: #FFFFFF; }
+.highlight-blue   { background: var(--accent-blue);  color: #FFFFFF; }
+.highlight-yellow { background: var(--accent-amber); color: var(--ink); }
 
 /* --- Primitif tata letak -------------------------------------------------- */
 
@@ -246,35 +267,47 @@ strong, b { font-weight: 700; }
   .grid-2 { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* Garis pemisah — tebal dan hitam, bukan garis rambut */
+/* Garis pemisah — tipis, memakai --line-soft. Tema lama memakai palang hitam
+   setebal 3px; di halaman dengan banyak kartu, garis setebal itu terbaca
+   sebagai objek tersendiri alih-alih sebagai pemisah. */
 .rule {
-  height: var(--bw-2);
-  background: var(--ink);
+  height: 1px;
+  background: var(--line-soft);
   border: 0;
 }
 
-.rule--strong { height: 6px; }
+.rule--strong { height: var(--bw-3); background: var(--line); }
 
-/* --- Utilitas tanda tangan BRUTAL -----------------------------------------
-   Tiga kelas inti dari spesifikasi bagian 4. Sebagian besar komponen di
-   components.css sudah memakai kombinasi ini secara langsung lewat token;
-   kelas di sini untuk markup yang dirakit di JS dan penggunaan sekali pakai. */
+/* --- Utilitas tanda tangan tema -------------------------------------------
+   Nama kelasnya tetap `brutal-*` walau temanya sudah berganti. Itu disengaja:
+   kelas-kelas ini dipakai di markup yang dirakit JS dan di situs induk, jadi
+   mengganti namanya berarti perubahan lintas berkas yang tidak memberi
+   tampilan baru apa pun. Yang berubah nilainya, bukan namanya. */
 
-.brutal-border { border: var(--bw-2) solid var(--ink); }
-
-.brutal-shadow {
-  box-shadow: var(--sh-3);
-  transition: transform var(--t-press) ease,
-              box-shadow var(--t-press) ease;
+.brutal-border {
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-lg);
 }
 
-/* Efek "ditekan": elemen bergeser 4px ke kanan-bawah sementara bayangannya
-   menyusut 8px→4px. Karena geseran sama persis dengan penyusutan, sudut
-   kanan-bawah bayangan diam di tempat — itu yang membuatnya terbaca sebagai
-   tekanan, bukan sekadar pergerakan. */
+.brutal-shadow {
+  box-shadow: var(--sh-1);
+  transition: transform var(--t-fast) var(--ease-out),
+              box-shadow var(--t-fast) var(--ease-out);
+}
+
+/* Efek "terangkat", kebalikan dari tema lama. Dulu hover menekan elemen TURUN
+   ke arah bayangannya (meniru tombol fisik yang ditekan). Sekarang hover
+   mengangkatnya NAIK 2px sambil memperdalam bayangan — bahasa kartu
+   dashboard, di mana hover berarti "ini bisa dibuka", bukan "ini sedang
+   kamu tekan". Reaksi tekan yang sesungguhnya pindah ke `:active`. */
 .brutal-shadow:hover {
-  box-shadow: var(--sh-3-press);
-  transform: translate(4px, 4px);
+  box-shadow: var(--sh-2);
+  transform: translateY(-2px);
+}
+
+.brutal-shadow:active {
+  box-shadow: var(--sh-1-press);
+  transform: translateY(0);
 }
 
 /* --- Pola kisi dekoratif --------------------------------------------------- */
@@ -339,6 +372,7 @@ strong, b { font-weight: 700; }
   background: var(--highlight);
   color: var(--ink);
   border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-pill);
   box-shadow: var(--sh-2);
   font-size: var(--fs-sm);
   font-weight: 700;

@@ -6,7 +6,11 @@
 <title>Arsip23 — Arsip Penyimpanan File Gratis Warga</title>
 <meta name="description" content="Arsip dokumentasi kegiatan warga: unggah sendiri, tertata rapi, bisa dilihat siapa saja.">
 <meta name="color-scheme" content="light">
-<meta name="theme-color" content="#0000FF">
+<!-- Mewarnai bilah alamat Chrome Android. Dipatok sama dengan latar
+     .app-header (putih) supaya bilah alamat dan header terbaca sebagai satu
+     permukaan menyambung. Tema lama memakai biru #0000FF, warna yang setelah
+     pergantian tema tidak muncul lagi di mana pun di halaman ini. -->
+<meta name="theme-color" content="#FFFFFF">
 
 <!-- Ikon tab/jendela peramban: kotak biru "23", turunan dari .app-logo__mark
      di header (lihat assets/favicon.svg untuk alasan kenapa hanya "23", bukan
@@ -38,9 +42,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=10">
-<link rel="stylesheet" href="assets/css/base.css?v=10">
-<link rel="stylesheet" href="assets/css/app.css?v=10">
+<link rel="stylesheet" href="assets/css/tokens.css?v=11">
+<link rel="stylesheet" href="assets/css/base.css?v=11">
+<link rel="stylesheet" href="assets/css/app.css?v=11">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -260,6 +264,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=10"></script>
+<script type="module" src="assets/js/app.js?v=11"></script>
 </body>
 </html>

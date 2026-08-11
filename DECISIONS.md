@@ -786,3 +786,84 @@ mengembalikan situs ke `belvahector-ship-it.github.io` kapan saja.
 sertifikat otomatis GitHub**
 
 ---
+
+## CP-27 · Build · 2026-08-11 — Tema baru "Soft Neubrutalism" (menggantikan BRUTAL), di cabang terpisah
+
+**Diminta user:** menerapkan spesifikasi desain baru — *Modern Clean Dashboard /
+Soft Neubrutalism Hybrid* — dengan syarat eksplisit: **hanya sampai pengujian
+lokal**, dan **harus bisa dikembalikan** ke desain lama kalau tidak jadi.
+
+**Keputusan:** dikerjakan di cabang `desain-soft-neubrutalism`. `main` tidak
+disentuh sama sekali, sehingga pembatalan tidak butuh `revert` apa pun —
+cukup `git checkout main`. Tidak ada yang diterbitkan ke GitHub Pages.
+
+**Spesifikasi yang diberikan ditulis untuk situs LAIN.** Isinya (kartu ringkasan
+kas, matrik pembayaran I/P/L, kartu bendahara, dropdown tahun) adalah komponen
+kasmenoreh.my.id, bukan Arsip23 — repo ini tidak punya satu pun data keuangan.
+Yang diterapkan karena itu adalah **bahasa visualnya** (bagian 1–4 spesifikasi:
+palet, tipografi, grid, bentuk) plus komponen bagian 5 yang memang ada di sini
+(header, tombol, kartu, tabel→grid, modal). Komponen khas kas TIDAK dibuat-buat
+di sini hanya supaya spesifikasinya "terpakai habis".
+
+**Perubahan intinya seluruhnya di tiga berkas CSS**, tanpa satu baris JS pun
+tersentuh — karena tema lama pun sudah disiplin memakai token, bukan hex mentah:
+
+- `tokens.css` — palet, skala tipografi, radius, tebal border, bayangan
+- `base.css` — reset radius global dihapus, sorotan jadi pil, utilitas gerak
+- `app.css` — radius + kontur + gerak hover/press di setiap komponen
+
+**Dua temuan yang tidak terlihat dari membaca spesifikasi:**
+
+1. **`1.5px` adalah jebakan di Windows.** Spesifikasi mematok kontur kartu
+   "1.5px – 2px". Diuji langsung pada DPR 1.25 (penskalaan 125%, bawaan Windows):
+   `1.5px` disapu peramban ke **1 piksel perangkat** — lebar yang sama persis
+   dengan pemisah `1px`. Artinya pada mayoritas laptop Windows, "kontur tegas"
+   yang jadi seluruh identitas tema ini hilang tanpa ada yang bisa menunjuk
+   penyebabnya. Semua tebal border dijadikan bulat: 1 / 2 / 3 px.
+
+2. **`overflow: hidden` pada `.card` akan memotong cincin fokus keyboard.**
+   Itu cara paling ringkas membuat thumbnail ikut membulat, tapi seluruh
+   permukaan kartu adalah tombol (`.card__hit`) yang cincin fokusnya digambar
+   di LUAR kotaknya lewat `box-shadow`. Radius dipasang langsung di
+   `.card__thumb`/`.card__ext` sebagai gantinya.
+
+**Font TIDAK diganti.** Spesifikasi meminta "Inter / Plus Jakarta Sans /
+Montserrat"; Archivo + Manrope dipertahankan karena kategorinya sama persis dan
+keduanya sudah ada sebagai woff2 lokal — menggantinya berarti mengembalikan
+ketergantungan CDN yang sengaja dihapus, untuk perbedaan yang tidak akan
+disadari satu pun warga.
+
+**Utang yang disengaja (kalau tema ini jadi dipakai):**
+
+- `assets/favicon.svg` masih kotak **biru** `#0000FF` dari tema BRUTAL,
+  sementara `.app-logo__mark` di header kini charcoal. Menyelaraskannya butuh
+  edit `favicon.svg` lalu `node scripts/gen-icons.js` — yang butuh dependensi
+  `sharp` terpasang, di luar lingkup "pengujian lokal".
+- **`tokens.css` dan `base.css` kini MENYIMPANG dari kasmenoreh.my.id.** CP-03
+  menetapkan keduanya disalin apa adanya dari situs induk dan tidak diedit
+  tangan di sini. Aturan itu dilanggar secara sadar karena desain barunya
+  diminta untuk Arsip23 lebih dulu. Selama induknya belum ikut diperbarui,
+  **menyalin ulang tokens.css dari sana akan mengembalikan tema BRUTAL diam-diam.**
+  Peringatan ini juga ditulis di kepala `tokens.css` sendiri.
+
+**Ditambahkan untuk pengujian, aman dihapus:** `preview-desain.html` (halaman
+statis berisi semua komponen sekaligus — perlu karena halaman asli menahan
+seluruh isinya di balik gerbang login, sehingga kartu/toolbar/keadaan
+kosong/antrian unggah tidak akan pernah terlihat tanpa akun Google) dan
+`.claude/launch.json` (server statis lokal port 5173).
+
+**Diuji lokal:** tidak ada galat konsol; tidak ada gulir horizontal di 375px
+maupun 1280px; gerbang login tetap terkunci, tetap menggulir di dalam badannya,
+dan isyarat gulirnya tetap muncul/hilang dengan benar; ketiga tebal border
+terbedakan pada DPR 1.25. **Belum diuji:** alur login Google sungguhan dan
+render kartu dari data Drive asli (butuh Worker + akun).
+
+**Affects:** `assets/css/tokens.css`, `assets/css/base.css`, `assets/css/app.css`,
+`index.html` (`theme-color`, penanda versi `?v=11`), `404.html`,
+penanda versi di `assets/js/*.js`.
+
+**Reversible:** ya, sepenuhnya — `git checkout main`. `main` tidak diubah.
+
+**Status:** proposed · diuji lokal · **belum diterbitkan, menunggu keputusan user**
+
+---

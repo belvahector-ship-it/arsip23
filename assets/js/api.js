@@ -6,7 +6,7 @@
    dengan `res.ok`, status code, atau JSON mentah.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=10';
+import { CONFIG } from './config.js?v=11';
 
 export class ApiError extends Error {
   constructor(code, message, status) {
