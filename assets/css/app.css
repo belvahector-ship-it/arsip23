@@ -6,10 +6,21 @@
    sebuah warna dibutuhkan dan belum ada tokennya, tokennya yang ditambah,
    bukan hex-nya yang dituliskan.
 
-   Tanda tangan tema yang wajib dipertahankan di setiap elemen yang bisa
-   ditekan: elemen bergeser PERSIS sejauh selisih offset bayangannya, sehingga
-   sudut kanan-bawah bayangan diam di tempat. Itulah yang membuatnya terasa
-   seperti tombol fisik, bukan kotak yang sekadar bergoyang.
+   TANDA TANGAN TEMA (neo console, CP-27) — empat aturan yang berlaku untuk
+   SETIAP kotak di berkas ini, dan yang membuat halaman terbaca sebagai satu
+   sistem alih-alih kumpulan komponen:
+
+     1. KONTUR selalu ada, selalu --ink. Border 2px untuk kontrol, 3px untuk
+        kartu. Tidak pernah abu-abu, tidak pernah absen.
+     2. BAYANGAN KERAS, BLUR NOL. `Npx Npx 0 var(--ink)`. Satu saja diganti
+        bayangan ber-blur dan seluruh tema jatuh jadi dashboard biasa.
+     3. SUDUT MENGIKUTI UKURAN. Lencana kecil 4–6px, tombol 8–12px, kartu
+        16px. Radius besar pada elemen kecil mengubahnya jadi kapsul dan
+        menghapus kesan "tombol".
+     4. GERAK TEKAN mengikuti `.brutal-shadow` di base.css — hover naik 1px
+        dengan bayangan membesar, klik geser +2px dengan bayangan HILANG.
+        Baca komentar panjang di sana sebelum menambah komponen baru yang
+        bisa diklik; jangan mengarang nilai sendiri.
    ========================================================================== */
 
 /* Atribut `hidden` HARUS menang atas `display` apa pun.
@@ -31,89 +42,162 @@
   justify-content: center;
   gap: var(--sp-2);
   min-height: var(--touch);
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--sp-2) var(--sp-5);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: var(--fs-sm);
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  background: var(--surface);
+  background: var(--surface-alt);
   color: var(--ink);
   border: var(--bw-2) solid var(--ink);
+  /* --r-lg (12px), BUKAN pil. Diukur dari tombol di situs induk. Radius penuh
+     mengubah tombol jadi kapsul dan menghapus kesan "kotak bertumpuk" yang
+     justru dibawa oleh bayangan kerasnya. */
+  border-radius: var(--r-lg);
   box-shadow: var(--sh-1);
-  transition: transform var(--t-press) var(--ease-step),
-              box-shadow var(--t-press) var(--ease-step),
+  transition: transform var(--t-press) var(--ease-mid),
+              box-shadow var(--t-press) var(--ease-mid),
               background var(--t-fast) var(--ease-mid);
 }
 
-.btn:hover { background: var(--surface-alt); }
+/* Pola tekan — sama persis dengan `.brutal-shadow` di base.css. */
+.btn:hover {
+  box-shadow: var(--sh-1-hover);
+  transform: translate(var(--hover-lift), var(--hover-lift));
+}
 
 .btn:active {
-  transform: translate(2px, 2px);   /* = selisih 4px → 2px */
-  box-shadow: var(--sh-1-press);
+  box-shadow: var(--sh-press);
+  transform: translate(var(--press-shift), var(--press-shift));
 }
 
+/* Tombol mati TIDAK boleh cuma diredam opacity-nya. Bayangan keras yang tetap
+   menggantung membuatnya masih terbaca sebagai benda yang bisa ditekan, dan
+   warga akan menekannya berulang kali tanpa reaksi apa pun. Bayangannya
+   dilepas: kotaknya rata, jelas mati. */
 .btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-  box-shadow: var(--sh-1);
+  box-shadow: none;
+  background: var(--surface-sunk);
 }
 
+/* Tombol utama amber. `filter: brightness()` tema lama diganti warna eksplisit
+   --highlight-hover: brightness menggelapkan JUGA teks --ink di atasnya, jadi
+   kontras yang sudah dihitung (14.6:1) bergeser tanpa disengaja setiap kali
+   kursor lewat. */
 .btn--primary { background: var(--highlight); color: var(--highlight-ink); }
-.btn--primary:hover { background: var(--highlight); filter: brightness(0.94); }
+.btn--primary:hover { background: var(--highlight-hover); }
 
-.btn--danger { background: var(--critical); color: var(--paper); }
-.btn--danger:hover { background: var(--critical); filter: brightness(0.9); }
+/* Teks --ink di atas merah #FF6467, BUKAN putih: putih di atasnya cuma 2.6:1
+   dan gagal WCAG bahkan untuk teks besar. Isian merahnya sendiri sudah cukup
+   membedakannya dari tombol lain — tidak perlu teks putih untuk itu. */
+.btn--danger { background: var(--critical); color: var(--ink); }
+.btn--danger:hover { background: var(--critical-ink); color: #FFFFFF; }
 
-.btn--ghost { box-shadow: none; border-color: var(--ink); }
+/* Varian tanpa bayangan untuk aksi sekunder ("Batal"). Ketiadaan bayangan
+   itulah hierarkinya — di tema ini kedalaman bayangan adalah kepentingan,
+   jadi aksi yang tidak penting memang tidak punya bayangan. */
+.btn--ghost {
+  box-shadow: none;
+  background: transparent;
+  border-color: var(--ink);
+  color: var(--ink-2);
+}
+.btn--ghost:hover {
+  box-shadow: none;
+  transform: none;
+  background: var(--surface-alt);
+  color: var(--ink);
+}
 .btn--ghost:active { transform: none; box-shadow: none; background: var(--surface-sunk); }
 
 .btn--block { width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover, .btn:active { transform: none; }
+}
 
 /* --------------------------------------------------------------------------
    Header
    -------------------------------------------------------------------------- */
 
+/* Header: tinggi 64px, latar KREM (bukan putih), dan bayangan keras ke bawah
+   `0 4px 0`. Ketiganya diukur dari situs induk.
+
+   Bayangannya sengaja tanpa offset ke samping. Bilah ini selebar layar, jadi
+   offset horizontal akan menggantung di luar viewport dan memicu gulir
+   horizontal di HP — cacat yang muncul hanya di layar sempit dan karena itu
+   paling sering lolos.
+
+   Krem #FFFDF5 di atas latar halaman #F8FAFC: header jadi permukaan yang
+   BERBEDA dari halaman, bukan menyatu dengannya. Itu yang membuat bayangan
+   di bawahnya terbaca sebagai bilah yang melayang. */
 .app-header {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  background: var(--paper);
+  background: var(--surface-cream);
   border-bottom: var(--bw-3) solid var(--ink);
+  box-shadow: var(--sh-bar);
 }
 
 .app-header__inner {
   display: flex;
   align-items: center;
-  gap: var(--sp-4);
-  padding: var(--sp-3) var(--gutter);
+  gap: var(--sp-3);
+  min-height: 64px;
+  padding: var(--sp-2) var(--gutter);
   max-width: var(--container);
   margin-inline: auto;
 }
 
+/* Logo: bobot 900 uppercase dengan tracking NEGATIF (--ls-display), bukan
+   tracking lebar. Diukur dari situs induk. Huruf yang dirapatkan pada bobot
+   900 itulah yang memberi kesan "logotype" — tracking lebar akan membuatnya
+   terbaca sebagai label biasa. */
 .app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: var(--fs-md);
-  letter-spacing: var(--ls-tight);
+  font-weight: 900;
+  font-size: var(--fs-base);
+  letter-spacing: var(--ls-display);
   text-transform: uppercase;
   white-space: nowrap;
 }
 
+/* Kotak gelap bersudut 12px dengan kontur dan bayangan keras 2px — bentuk
+   yang sama dengan logo mark "RT" di situs induk.
+
+   Gelap, bukan biru seperti tema BRUTAL: di header yang sudah memuat tombol
+   amber dan avatar berwarna, logo biru jadi warna keempat yang berebut
+   perhatian di pita setinggi 64px. Warna gelapnya sudah ada di mana-mana
+   (kontur, teks, bayangan), jadi ia menonjol lewat bentuk dan bobot.
+
+   Catatan: assets/favicon.svg masih menggambarkan mark ini sebagai kotak
+   BIRU #0000FF dari tema BRUTAL. Favicon belum diikutkan; kalau tema ini jadi
+   dipakai, sesuaikan favicon.svg lalu jalankan `node scripts/gen-icons.js`. */
 .app-logo__mark {
   display: inline-block;
-  background: var(--brutal-blue);
-  color: var(--paper);
-  padding-inline: var(--sp-2);
+  background: var(--ink);
+  color: var(--surface-cream);
+  padding: 0.2em var(--sp-2);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
 }
 
 .app-header__ws {
   font-size: var(--fs-2xs);
+  font-weight: 700;
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
   color: var(--ink-3);
-  border-left: var(--bw-1) solid var(--ink);
+  border-left: var(--bw-2) solid var(--line-soft);
   padding-left: var(--sp-3);
 }
 
@@ -124,10 +208,16 @@
   margin-left: auto;
 }
 
+/* Avatar memakai --r-lg (12px) dengan bayangan 2px, meniru avatar di header
+   situs induk — kotak membulat, bukan lingkaran. Lingkaran adalah satu-satunya
+   bentuk di halaman ini yang tidak punya sudut, dan di antara belasan kotak
+   berbayang keras ia terbaca sebagai benda dari sistem desain lain. */
 .app-user__avatar {
   width: 36px;
   height: 36px;
-  border: var(--bw-1) solid var(--ink);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
   object-fit: cover;
   background: var(--surface-alt);
 }
@@ -152,8 +242,8 @@
 
 .notice-bar {
   background: var(--critical);
-  color: var(--paper);
-  border-bottom: var(--bw-3) solid var(--ink);
+  color: #FFFFFF;
+  border-bottom: var(--bw-1) solid var(--ink);
   padding: var(--sp-3) var(--gutter);
   font-size: var(--fs-sm);
   font-weight: 600;
@@ -206,18 +296,26 @@
   font-family: var(--font-display);
 }
 
+/* Toolbar kini PANEL KREM, bukan pita bergaris atas-bawah seperti tema BRUTAL.
+   Krem + bayangan 4px mengikuti pola "panel pembungkus" di situs induk:
+   permukaan krem membungkus, permukaan putih dibaca. Toolbar membungkus
+   kontrol, jadi ia krem — sementara kartu di bawahnya putih. */
 .toolbar {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
   flex-wrap: wrap;
-  padding-block: var(--sp-3);
-  border-block: var(--bw-2) solid var(--ink);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-cream);
+  border: var(--bw-3) solid var(--ink);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-3);
   margin-bottom: var(--sp-5);
 }
 
 .toolbar__count {
   font-size: var(--fs-sm);
+  font-weight: 600;
   color: var(--ink-2);
 }
 
@@ -275,14 +373,36 @@
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  border: var(--bw-2) solid var(--ink);
-  box-shadow: var(--sh-1);
-  transition: transform var(--t-press) var(--ease-step),
-              box-shadow var(--t-press) var(--ease-step);
+  border: var(--bw-3) solid var(--ink);
+  border-radius: var(--r-xl);
+  /* 5px — tingkat "kartu metrik" di situs induk. Kartu adalah objek utama
+     halaman ini, jadi ia duduk satu tingkat di bawah modal (6px) dan satu
+     tingkat di atas panel (4px). */
+  box-shadow: var(--sh-4);
+  /* SENGAJA TIDAK `overflow: hidden`, walaupun itu cara paling ringkas untuk
+     memaksa thumbnail ikut membulat di sudut kartu. Seluruh permukaan kartu
+     adalah tombol (`.card__hit`, inset 0), dan cincin fokus keyboard-nya
+     digambar DI LUAR kotaknya lewat box-shadow — `overflow: hidden` akan
+     memotong cincin itu habis, sehingga pengguna keyboard kehilangan satu-
+     satunya penanda posisi di dalam grid berisi puluhan kartu. Sudut
+     thumbnail dibulatkan langsung di `.card__thumb`/`.card__ext` di bawah. */
+  transition: transform var(--t-press) var(--ease-mid),
+              box-shadow var(--t-press) var(--ease-mid);
 }
 
-.card:hover { box-shadow: var(--sh-2); transform: translate(-2px, -2px); }
-.card:active { box-shadow: var(--sh-1-press); transform: translate(2px, 2px); }
+.card:hover {
+  box-shadow: var(--sh-4-hover);
+  transform: translate(var(--hover-lift), var(--hover-lift));
+}
+
+.card:active {
+  box-shadow: var(--sh-press);
+  transform: translate(var(--press-shift), var(--press-shift));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover, .card:active { transform: none; }
+}
 
 /* Seluruh permukaan kartu bisa ditekan, tapi tombol hapus duduk DI ATASNYA.
    Caranya: satu elemen tak terlihat yang meregang menutupi kartu, BUKAN
@@ -297,6 +417,9 @@
   cursor: pointer;
   background: none;
   border: none;
+  /* Mengikuti sudut kartu supaya cincin fokus keyboard membulat bersamanya,
+     bukan menggambar kotak tajam di sekeliling kartu yang membulat. */
+  border-radius: var(--r-xl);
 }
 
 .card__body {
@@ -307,14 +430,19 @@
   flex: 1;
 }
 
+/* Ikon kategori dalam kotak amber berkontur + bayangan keras — bentuk yang
+   sama dengan ikon indikator di kartu metrik situs induk. Kotak membulat
+   (12px), bukan lingkaran: lihat alasannya di `.app-user__avatar`. */
 .card__icon {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  background: var(--accent);
-  color: var(--paper);
-  border: var(--bw-1) solid var(--ink);
+  background: var(--highlight);
+  color: var(--ink);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-1);
   margin-bottom: var(--sp-2);
 }
 
@@ -352,6 +480,8 @@
   gap: var(--sp-1);
 }
 
+/* Tombol ikon kotak-membulat 8px dengan bayangan keras 2px — bentuk yang sama
+   dengan tombol collapse & tombol kunci di header situs induk. */
 .card__menu {
   /* 44px, bukan 40px. Ini tombol HAPUS PERMANEN yang duduk di pojok kartu yang
      seluruh permukaannya juga bisa ditekan — target yang terlalu kecil di sini
@@ -362,23 +492,51 @@
   height: 44px;
   display: grid;
   place-items: center;
-  background: var(--paper);
-  border: var(--bw-1) solid var(--ink);
+  background: var(--surface-cream);
+  color: var(--ink);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-1);
   font-weight: 800;
   line-height: 1;
+  transition: transform var(--t-press) var(--ease-mid),
+              box-shadow var(--t-press) var(--ease-mid),
+              background var(--t-fast) var(--ease-mid);
 }
 
 /* Warna hover membedakan aksi yang bisa dibatalkan dari yang tidak.
-   Hapus itu permanen (bukan ke tempat sampah), jadi hanya ia yang memerah. */
-.card__menu:hover { background: var(--accent); color: var(--paper); }
-.card__menu--danger:hover { background: var(--critical); color: var(--paper); }
+   Hapus itu permanen (bukan ke tempat sampah), jadi hanya ia yang memerah.
+   Teks tetap --ink di kedua kasus — putih di atas isian secerah ini gagal
+   kontras (lihat catatan di `.btn--danger`). */
+.card__menu:hover {
+  background: var(--accent-fill);
+  box-shadow: var(--sh-1-hover);
+  transform: translate(var(--hover-lift), var(--hover-lift));
+}
+.card__menu--danger:hover { background: var(--critical); }
 
-/* Thumbnail berkas gambar */
+.card__menu:active {
+  box-shadow: var(--sh-press);
+  transform: translate(var(--press-shift), var(--press-shift));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card__menu:hover, .card__menu:active { transform: none; }
+}
+
+/* Thumbnail berkas gambar.
+
+   Sudut atas dibulatkan di sini, bukan lewat `overflow: hidden` di `.card`
+   (lihat alasannya di sana). `calc(... - var(--bw-2))` bukan kerapian
+   berlebihan: thumbnail duduk DI DALAM border kartu, jadi radius luar
+   dikurangi tebal border supaya lengkung gambar dan lengkung border benar-
+   benar sejajar — tanpa itu tersisa sabit tipis latar kartu di tiap sudut. */
 .card__thumb {
   aspect-ratio: 1 / 1;
   width: 100%;
   object-fit: cover;
-  border-bottom: var(--bw-2) solid var(--ink);
+  border-bottom: var(--bw-3) solid var(--ink);
+  border-radius: calc(var(--r-xl) - var(--bw-3)) calc(var(--r-xl) - var(--bw-3)) 0 0;
   background: var(--surface-sunk);
 }
 
@@ -386,10 +544,15 @@
   aspect-ratio: 1 / 1;
   display: grid;
   place-items: center;
-  border-bottom: var(--bw-2) solid var(--ink);
+  border-bottom: var(--bw-3) solid var(--ink);
+  border-radius: calc(var(--r-xl) - var(--bw-3)) calc(var(--r-xl) - var(--bw-3)) 0 0;
   background: var(--surface-alt);
-  font-family: var(--font-display);
-  font-weight: 800;
+  /* Ekstensi berkas (PDF/XLSX/DOCX) memakai font ANGKA, bukan font judul.
+     Ia deretan huruf kapital pendek yang dibaca sebagai kode mesin, sama
+     seperti angka — dan monospace bobot 900 di sini adalah salah satu tempat
+     rasa "konsol" tema ini paling terasa. */
+  font-family: var(--font-num);
+  font-weight: 900;
   font-size: var(--fs-lg);
   letter-spacing: var(--ls-label);
   color: var(--ink-2);
@@ -407,8 +570,9 @@
   grid-column: 1 / -1;
   padding: var(--sp-8) var(--sp-5);
   text-align: center;
-  border: var(--bw-2) dashed var(--ink);
-  background: var(--surface-alt);
+  border: var(--bw-3) dashed var(--ink);
+  border-radius: var(--r-xl);
+  background: var(--surface-cream);
 }
 
 .state__title {
@@ -427,9 +591,15 @@
 
 .state--error { border-style: solid; border-color: var(--critical); background: var(--critical-soft); }
 
-/* Kartu bayangan saat memuat. Bergerak hanya kalau user tidak menolak gerak. */
+/* Kartu bayangan saat memuat. Bergerak hanya kalau user tidak menolak gerak.
+
+   Bentuknya sengaja SAMA PERSIS dengan `.card` (radius --r-lg, kontur
+   charcoal): skeleton yang bentuknya beda dari kartu yang menggantikannya
+   membuat grid tampak "melompat" saat data akhirnya masuk. */
 .skeleton {
-  border: var(--bw-2) solid var(--ink);
+  border: var(--bw-3) solid var(--ink);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-4);
   background: var(--surface-alt);
   min-height: 190px;
 }
@@ -452,7 +622,10 @@
      situs induk. */
   margin: auto;
   border: var(--bw-3) solid var(--ink);
-  box-shadow: var(--sh-3);
+  border-radius: var(--r-xl);
+  /* 6px — tingkat paling dalam. Modal adalah satu-satunya hal di layar saat
+     ia terbuka, jadi ia duduk di puncak tumpukan bayangan. */
+  box-shadow: var(--sh-5);
   background: var(--surface);
   padding: 0;
   max-width: min(560px, calc(100vw - 2 * var(--gutter)));
@@ -487,18 +660,27 @@
   min-height: 0;
 }
 
-.modal::backdrop { background: rgb(0 0 0 / 0.55); }
+/* Latar gelap memakai --ink yang sama dengan kontur dan bayangan, bukan hitam
+   netral. TANPA blur: `backdrop-filter` mengaburkan tepi kartu di belakangnya
+   dan melembutkan satu-satunya hal yang tidak boleh lembut di tema ini. */
+.modal::backdrop { background: rgb(15 23 42 / 0.6); }
 
 .modal__head {
   flex: none;
   padding: var(--sp-4) var(--sp-5);
-  border-bottom: var(--bw-2) solid var(--ink);
+  border-bottom: var(--bw-3) solid var(--ink);
+  background: var(--surface-cream);
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 900;
   font-size: var(--fs-md);
+  letter-spacing: var(--ls-display);
 }
 
-.modal__head--danger { background: var(--critical); color: var(--paper); }
+.modal__head--danger {
+  background: var(--critical);
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
 
 .modal__body {
   padding: var(--sp-5);
@@ -523,7 +705,8 @@
 .modal__foot {
   flex: none;
   padding: var(--sp-4) var(--sp-5);
-  border-top: var(--bw-2) solid var(--ink);
+  border-top: var(--bw-3) solid var(--ink);
+  background: var(--surface-cream);
   display: flex;
   gap: var(--sp-3);
   justify-content: flex-end;
@@ -551,9 +734,11 @@
 
 .field__input {
   min-height: var(--touch);
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
   background: var(--surface);
   border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-xs);
   width: 100%;
 }
 
@@ -584,7 +769,7 @@ html.has-locked-scroll { overflow: hidden; }
 .gate-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 0.55);
+  background: rgb(15 23 42 / 0.6);
   z-index: var(--z-overlay);
 }
 
@@ -646,8 +831,9 @@ html.has-locked-scroll { overflow: hidden; }
   font-weight: 700;
   letter-spacing: var(--ls-label);
   text-transform: uppercase;
-  color: var(--paper);
-  background: var(--ink);
+  color: var(--ink);
+  background: var(--highlight);
+  border-top: var(--bw-2) solid var(--ink);
   padding: var(--sp-2) var(--sp-5);
   opacity: 0;
   transform: translateY(4px);
@@ -709,7 +895,7 @@ html.has-locked-scroll { overflow: hidden; }
   height: 24px;
   flex: none;
   margin-top: 2px;
-  accent-color: var(--brutal-blue);
+  accent-color: var(--highlight);
 }
 
 /* --------------------------------------------------------------------------
@@ -729,10 +915,11 @@ html.has-locked-scroll { overflow: hidden; }
 .uploads:empty { display: none; }
 
 .upload-item {
-  background: var(--paper);
-  border: var(--bw-2) solid var(--ink);
-  box-shadow: var(--sh-2);
-  padding: var(--sp-3);
+  background: var(--surface);
+  border: var(--bw-3) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-4);
+  padding: var(--sp-3) var(--sp-4);
   display: grid;
   gap: var(--sp-2);
   font-size: var(--fs-2xs);
@@ -747,18 +934,28 @@ html.has-locked-scroll { overflow: hidden; }
 
 .upload-item__bar {
   height: 10px;
-  border: var(--bw-1) solid var(--ink);
-  background: var(--surface-alt);
+  border: var(--bw-2) solid var(--ink);
+  border-radius: var(--r-md);
+  background: var(--surface-sunk);
+  /* Isian di dalamnya juga membulat penuh, jadi ujungnya harus dipotong oleh
+     bilahnya — tanpa ini sudut isian menyembul keluar di kedua ujung. */
+  overflow: hidden;
 }
 
 .upload-item__fill {
   height: 100%;
   width: 0;
-  background: var(--brutal-blue);
+  border-radius: 0;
+  background: var(--accent-fill);
   transition: width var(--t-base) var(--ease-mid);
 }
 
-.upload-item--done .upload-item__fill { background: var(--brutal-blue); }
+/* Selesai berubah HIJAU, bukan tetap biru seperti tema lama. Warga yang
+   mengunggah 30 foto memindai daftar ini sekilas untuk mencari yang gagal;
+   tiga keadaan (berjalan/selesai/gagal) yang cuma dibedakan dua warna
+   memaksanya membaca teks status satu per satu. */
+.upload-item--done .upload-item__fill { background: var(--success); }
+.upload-item--done { border-color: var(--success); }
 .upload-item--error .upload-item__fill { background: var(--critical); width: 100% !important; }
 .upload-item--error { border-color: var(--critical); }
 
@@ -779,16 +976,22 @@ html.has-locked-scroll { overflow: hidden; }
 
 .toast {
   background: var(--ink);
-  color: var(--paper);
-  border: var(--bw-2) solid var(--ink);
-  box-shadow: var(--sh-2);
-  padding: var(--sp-3) var(--sp-4);
+  color: var(--surface-cream);
+  border: var(--bw-3) solid var(--ink);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-4);
+  padding: var(--sp-3) var(--sp-5);
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.toast--error { background: var(--critical); }
-.toast--ok { background: var(--brutal-blue); }
+/* Toast netral memakai isian --ink dengan teks krem; dua varian berwarna
+   memakai isian CERAH dengan teks --ink. Keduanya lolos kontras dengan
+   lapang (7,5:1 dan 12,5:1), dan isian cerah + kontur gelap adalah pola yang
+   sama dengan lencana di seluruh halaman — toast jadi terlihat seperti bagian
+   dari sistem yang sama, bukan kotak notifikasi dari tema lain. */
+.toast--error { background: var(--critical); color: var(--ink); }
+.toast--ok    { background: var(--success);  color: var(--ink); }
 
 @media (prefers-reduced-motion: no-preference) {
   .toast { animation: toast-in var(--t-base) var(--ease-out); }
@@ -800,13 +1003,14 @@ html.has-locked-scroll { overflow: hidden; }
    -------------------------------------------------------------------------- */
 
 .viewer { border: none; background: none; max-width: 100vw; max-height: 100vh; padding: 0; }
-.viewer::backdrop { background: rgb(0 0 0 / 0.85); }
+.viewer::backdrop { background: rgb(15 23 42 / 0.88); }
 
 .viewer__img {
   max-width: min(92vw, 1100px);
   max-height: 86vh;
   width: auto;
-  border: var(--bw-3) solid var(--paper);
+  border: var(--bw-3) solid #FFFFFF;
+  border-radius: var(--r-xl);
   background: var(--ink);
 }
 
@@ -815,38 +1019,39 @@ html.has-locked-scroll { overflow: hidden; }
   align-items: center;
   gap: var(--sp-3);
   justify-content: space-between;
-  color: var(--paper);
+  color: #FFFFFF;
   padding-top: var(--sp-3);
   font-size: var(--fs-sm);
 }
+
+/* Tombol "Tutup" duduk di atas latar gelap 88%. Varian putih bawaan `.btn`
+   punya border charcoal yang praktis tak terlihat di sana, jadi di sini ia
+   dibalik: isian terang tanpa perlu kontur untuk memisahkannya. */
+.viewer__bar .btn { border-color: #FFFFFF; }
 
 /* --------------------------------------------------------------------------
    Footer
    -------------------------------------------------------------------------- */
 
-/* Footer navy #02122A adalah PENYIMPANGAN sengaja dari tokens.css, bukan lupa
-   memakai token. tokens.css eksplisit menolak navy untuk footer (lihat
-   komentarnya sendiri: "Navy bukan bagian dari palet BRUTAL") — keputusan itu
-   berlaku untuk kasmenoreh.my.id, situs induk yang tokens.css disalin darinya
-   apa adanya (CP-03) dan TIDAK BOLEH diedit tangan supaya tidak menyimpang
-   dari sumbernya. Footer gelap ini murni identitas Arsip23 sendiri, jadi
-   nilainya didefinisikan lokal di sini, satu tempat, bukan tersebar sebagai
-   hex mentah di banyak baris — dan tetap dinamai seperti token supaya jelas
-   ini sengaja, bukan kecelakaan.
+/* Footer KREM dengan kontur atas tebal — bukan blok gelap seperti dua tema
+   sebelumnya (navy #02122A di BRUTAL, charcoal di revisi pertama tema ini).
 
-   Warna teks di atasnya BUKAN --ink/--ink-2 biasa (keduanya nyaris hitam,
-   tak terlihat di atas navy). --footer-ink-2 dipatok terang tapi tetap
-   diredam dari putih murni, supaya judul "Arsip23" tetap yang paling menonjol
-   di antara body text — hierarki yang sama seperti --ink vs --ink-2 di tema
-   terang, dibalik untuk latar gelap. */
+   Blok gelap dilepas karena tema ini sudah memakai gelap untuk pekerjaan lain:
+   SETIAP kontur dan SETIAP bayangan di halaman ini berwarna --ink. Sebuah blok
+   raksasa dengan warna yang sama di dasar halaman bersaing dengan seluruh
+   sistem itu — bayangan keras tidak terlihat lagi di atasnya, dan footer
+   berhenti terbaca sebagai bagian dari halaman yang sama.
+
+   Krem #FFFDF5 memakai permukaan "pembungkus" yang sama dengan header, jadi
+   halaman ini dibuka dan ditutup oleh permukaan yang sama. --footer-ink-2
+   tetap ada sebagai nama supaya aturan di bawah tidak perlu dibongkar. */
 .app-footer {
-  --footer-navy:  #02122A;
-  --footer-ink:   var(--paper);
-  --footer-ink-2: #AEB9CC;
+  --footer-ink:   var(--ink);
+  --footer-ink-2: var(--ink-2);
 
   border-top: var(--bw-3) solid var(--ink);
   padding: var(--sp-7) var(--gutter) var(--sp-5);
-  background: var(--footer-navy);
+  background: var(--surface-cream);
   color: var(--footer-ink-2);
 }
 
@@ -857,7 +1062,7 @@ html.has-locked-scroll { overflow: hidden; }
   grid-template-columns: 2fr 1fr;
   gap: var(--sp-6);
   padding-bottom: var(--sp-6);
-  border-bottom: var(--bw-1) solid var(--footer-ink-2);
+  border-bottom: var(--bw-2) solid var(--line-soft);
 }
 
 @media (max-width: 720px) {
@@ -896,23 +1101,26 @@ html.has-locked-scroll { overflow: hidden; }
   font-size: var(--fs-xs);
 }
 
-/* Tautan footer BUKAN --accent (biru itu dikalibrasi untuk latar putih —
-   8.59:1 — dan jatuh ke sekitar 3:1 di atas navy, gagal WCAG AA untuk teks
-   kecil). Putih polos dipakai supaya kontrasnya tetap aman tanpa menambah
-   warna baru yang tidak ada di palet BRUTAL. */
+/* Footer kini terang, jadi tautannya bisa kembali memakai --accent seperti
+   tautan lain di halaman (6,4:1 di atas krem) — tidak perlu lagi putih polos
+   yang dulu dipakai semata karena latarnya gelap. */
 .app-footer a {
   font-weight: 700;
-  color: var(--footer-ink);
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.app-footer a:hover { color: var(--footer-ink-2); }
+.app-footer a:hover { color: var(--accent-hover); }
 
 /* Tombol Google Identity Services disuntik sebagai iframe oleh Google, jadi
    isinya tidak bisa kita gaya. Yang bisa dilakukan hanya membingkainya supaya
    tidak terlihat seperti benda asing yang jatuh ke halaman brutalis ini. */
 .gsi-frame {
   border: var(--bw-2) solid var(--ink);
+  /* --r-lg, mengikuti bentuk `.btn`: tombol Google adalah satu-satunya kontrol
+     di gerbang, dan kalau bentuknya beda sendiri, ia terlihat seperti benda
+     asing yang jatuh ke halaman alih-alih tombol milik situs ini. */
+  border-radius: var(--r-lg);
   box-shadow: var(--sh-1);
   overflow: hidden;
   line-height: 0;

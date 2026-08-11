@@ -786,3 +786,133 @@ mengembalikan situs ke `belvahector-ship-it.github.io` kapan saja.
 sertifikat otomatis GitHub**
 
 ---
+
+## CP-27 · Build · 2026-08-11 — Tema "Neo Console" (bayangan keras), di cabang terpisah
+
+**Diminta user:** menerapkan desain baru dengan syarat eksplisit — **hanya
+sampai pengujian lokal**, dan **harus bisa dikembalikan** kalau tidak jadi.
+
+**Keputusan:** dikerjakan di cabang `desain-neo-console`. `main` tidak disentuh
+sama sekali, jadi pembatalan tidak butuh `revert` apa pun — cukup
+`git checkout main`. Tidak ada yang diterbitkan ke GitHub Pages.
+
+**REVISI DI TENGAH JALAN — dan ini pelajaran utama entri ini.** Percobaan
+pertama dibuat dari dokumen spesifikasi tertulis saja, yang menyebut *"Soft
+Neubrutalism"*, *"efek elevasi/shadow tipis"*, dan border *1.5px*. Dari kata-kata
+itu saya menyimpulkan bayangan ber-blur yang halus — dan hasilnya **salah
+total**. Begitu situs induk yang sudah berjalan dibuka
+(`https://keuangan-rt-797376710565.asia-southeast1.run.app`), yang terlihat
+adalah kebalikannya: bayangan KERAS tanpa blur, `Npx Npx 0 #0F172A`, justru
+itulah seluruh identitas temanya — kesan konsol game jadul.
+
+Seluruh nilai akhirnya **diukur langsung dari situs itu lewat `getComputedStyle`**,
+bukan ditebak dari dokumen dan bukan dicocokkan mata dari tangkapan layar.
+Kalau nanti ada yang perlu diselaraskan lagi, ukur ulang dari sana.
+
+**Yang membuat tema ini terasa seperti konsol** (urutan menurut seberapa cepat
+hilang kalau seseorang "merapikan" CSS-nya nanti):
+
+1. **Bayangan keras, blur nol.** Delapan tingkat kedalaman, 1px sampai 6px,
+   semuanya `Npx Npx 0 var(--ink)`. Kedalaman = kepentingan; hierarki dibawa
+   oleh tumpukan bayangan, bukan oleh warna atau ukuran font.
+2. **Tombol benar-benar tertekan.** Hover: naik 1px, bayangan MEMBESAR. Klik:
+   geser +2px, bayangan **hilang sama sekali** (`0 0 0`) — kotaknya rata
+   menempel ke halaman. Bayangan yang cuma menyusut terbaca sebagai kotak
+   bergoyang, bukan tombol ditekan.
+3. **Angka monospace bobot 800–900.** Ini yang membuatnya terbaca sebagai layar
+   mesin, bukan laporan.
+4. **Sudut mengikuti ukuran.** Lencana 4–6px, tombol 8–12px, kartu 16px.
+
+**Tiga temuan yang tidak terlihat dari membaca spesifikasi:**
+
+1. **`1.5px` adalah jebakan di Windows.** Spesifikasi mematok kontur "1.5px–2px".
+   Diuji pada DPR 1.25 (penskalaan 125%, bawaan Windows): `1.5px` disapu
+   peramban ke **1 piksel perangkat** — sama persis dengan pemisah `1px`.
+   Artinya di mayoritas laptop Windows, kontur kartu dan garis pemisah jadi
+   tak terbedakan dan ketegasan tema hilang tanpa ada yang bisa menunjuk
+   penyebabnya. Semua tebal border dijadikan bulat: 1 / 2 / 3 px.
+2. **Bayangan header tidak boleh punya offset horizontal.** Bilah selebar layar
+   dengan `6px 6px 0` akan menggantung di luar viewport dan memicu gulir
+   horizontal di HP. Header memakai `0 4px 0` (`--sh-bar`).
+3. **`overflow: hidden` pada `.card` akan memotong cincin fokus keyboard.**
+   Itu cara paling ringkas membuat thumbnail ikut membulat, tapi seluruh
+   permukaan kartu adalah tombol (`.card__hit`) yang cincin fokusnya digambar
+   di LUAR kotaknya lewat `box-shadow`. Radius dipasang langsung di
+   `.card__thumb`/`.card__ext` sebagai gantinya.
+
+**Kontras dihitung ulang, tidak disalin dari situs induk.** Isian cerah tema ini
+(#FFDF20, #5EE9B5, #FF6467, #51A2FF) semuanya gagal WCAG sebagai warna teks —
+#FFDF20 cuma 1,1:1 di atas putih. Karena itu setiap warna punya dua nilai:
+isian cerah (teks `--ink` di atasnya) dan varian `-ink` gelap untuk teks kecil.
+Konsekuensi yang terlihat: tombol hapus dan toast memakai teks gelap, bukan
+teks putih seperti tema BRUTAL.
+
+**Font kini persis.** Ketiganya diunduh sebagai woff2 **lokal** subset latin —
+Space Grotesk (judul), Plus Jakarta Sans (teks), JetBrains Mono (angka), total
+90 KB. Bukan dari CDN Google: lewat CDN, tipografi seluruh situs bergantung
+pada permintaan jaringan yang di jaringan RT sering gagal, dan gejalanya bukan
+"sedang offline" melainkan judul dan angka yang mendadak berganti font sistem.
+
+Dua detail yang gampang dirusak nanti:
+
+- **Rentang bobot @font-face adalah batas ASLI tiap font** (300–700, 200–800,
+  100–800), jangan "dirapikan" jadi `100 900`. Tema ini meminta 900 di beberapa
+  tempat; peramban lalu MENSINTESIS bobot itu, dan situs induk pun begitu.
+  Rentang yang lebih lebar daripada isi berkasnya justru mematikan sintesis,
+  dan judul 900 diam-diam tergambar lebih tipis daripada di situs induk.
+- **Archivo + Manrope dilepas dari deklarasi**, meski awalnya dipasang sebagai
+  lapisan cadangan. `performance.getEntriesByType` menunjukkan keduanya tetap
+  diminta tiap muat halaman — 60 KB untuk font yang `document.fonts` laporkan
+  berstatus `unloaded`. Berkasnya dibiarkan di `assets/font/` karena salinan
+  tokens.css di situs induk masih memakainya. Kalau nanti ada yang
+  mengembalikan salah satunya ke tumpukan `--font-*`, @font-face-nya wajib
+  ditambahkan lagi — tanpa itu namanya diabaikan diam-diam.
+
+**Ikon sudah ikut diperbarui.** `favicon.svg` kini kotak gelap membulat dengan
+"23" krem, dan seluruh PNG + ICO diturunkan ulang lewat `node scripts/gen-icons.js`
+(`sharp` dipasang sementara dengan `--no-save`, lalu `node_modules` dihapus —
+tidak ada dependensi baru yang masuk repo). `site.webmanifest` ikut disesuaikan.
+Bayangan keras SENGAJA tidak ikut ke favicon: pada 16px, offset 2px adalah 12%
+lebar ikon, dan yang tergambar bukan kesan melayang melainkan kotak yang
+terlihat salah cetak.
+
+**Utang yang tersisa:**
+
+- **`tokens.css` dan `base.css` kini MENYIMPANG dari salinan di situs induk.**
+  CP-03 menetapkan keduanya disalin apa adanya dan tidak diedit tangan di sini.
+  Aturan itu dilanggar sadar. **Menyalin ulang tokens.css dari sana akan
+  mengembalikan tema BRUTAL diam-diam.** Peringatan ini juga ada di kepala
+  `tokens.css` sendiri.
+
+**Perkakas pengujian TIDAK diterbitkan.** `preview-desain.html` (halaman statis
+berisi semua komponen dengan data palsu — perlu karena halaman asli menahan
+seluruh isinya di balik gerbang login, sehingga kartu/toolbar/keadaan
+kosong/antrian unggah tidak akan pernah terlihat tanpa akun Google; tidak
+memuat satu pun berkas dari luar, jadi bisa dinilai tanpa internet) dan
+`.claude/launch.json` keduanya masuk `.gitignore`. Kalau ikut terbit,
+`preview-desain.html` akan publik di `arsip-gratis.my.id/preview-desain.html`
+dan memperlihatkan "3 folder · 4 berkas" palsu seolah itu isi arsip sungguhan.
+Berkasnya tetap ada di cakram untuk dipakai lagi kapan pun.
+
+**Diuji lokal:** tidak ada galat konsol; tidak ada gulir horizontal di 375px
+maupun 1280px; gerbang login tetap terkunci, tetap menggulir di dalam badannya,
+isyarat gulirnya tetap muncul saat di atas dan hilang saat mentok, dan tombol
+login tetap terjangkau; ketiga tebal border terbedakan pada DPR 1.25; seluruh
+bayangan terverifikasi blur-nol; ketiga font terbukti benar-benar TERPAKAI
+(diukur lewat `document.fonts.check` + perbandingan lebar teks, bukan sekadar
+"tidak ada galat"), dan hanya tiga woff2 yang diminta. **Belum diuji:** alur
+login Google sungguhan dan render kartu dari data Drive asli (butuh Worker +
+akun) — keduanya butuh jaringan dan akun pengelola.
+
+**Affects:** `assets/css/tokens.css`, `assets/css/base.css`, `assets/css/app.css`,
+`index.html` (`theme-color`, preload font, penanda versi `?v=14`), `404.html`,
+penanda versi di `assets/js/*.js`, `assets/favicon.svg` + `assets/favicon.ico` +
+`assets/icons/*`, `assets/site.webmanifest`, tiga woff2 baru di `assets/font/`,
+`.gitignore`.
+
+**Reversible:** ya, sepenuhnya — `git checkout main`. `main` tidak diubah, dan
+kondisinya sebelum perubahan ini dipatok permanen oleh tag `desain-brutal`.
+
+**Status:** confirmed · disetujui user setelah pratinjau · **diterbitkan ke `main`**
+
+---

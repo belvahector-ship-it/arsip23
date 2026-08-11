@@ -6,7 +6,11 @@
 <title>Arsip23 — Arsip Penyimpanan File Gratis Warga</title>
 <meta name="description" content="Arsip dokumentasi kegiatan warga: unggah sendiri, tertata rapi, bisa dilihat siapa saja.">
 <meta name="color-scheme" content="light">
-<meta name="theme-color" content="#0000FF">
+<!-- Mewarnai bilah alamat Chrome Android. Dipatok sama dengan latar krem
+     .app-header supaya bilah alamat dan header terbaca sebagai satu permukaan
+     menyambung. Tema lama memakai biru #0000FF, warna yang setelah pergantian
+     tema tidak muncul lagi di mana pun di halaman ini. -->
+<meta name="theme-color" content="#FFFDF5">
 
 <!-- Ikon tab/jendela peramban: kotak biru "23", turunan dari .app-logo__mark
      di header (lihat assets/favicon.svg untuk alasan kenapa hanya "23", bukan
@@ -23,8 +27,14 @@
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="manifest" href="assets/site.webmanifest">
 
-<link rel="preload" href="assets/font/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/font/manrope-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Preload HANYA tiga font yang benar-benar dipakai tema ini. Archivo dan
+     Manrope tetap dideklarasikan di tokens.css sebagai jaring pengaman, tapi
+     TIDAK di-preload: preload memaksa unduhan tanpa peduli dipakai atau tidak,
+     jadi mem-preload lima font berarti 60 KB yang tidak akan pernah tergambar
+     ikut mengantre di jalur render kritis — di jaringan RT itu terasa. -->
+<link rel="preload" href="assets/font/spacegrotesk-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/font/plusjakartasans-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/font/jetbrainsmono-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <!-- ?v= adalah PENANDA VERSI, dan wajib dinaikkan setiap kali berkas CSS/JS
      mana pun diubah.
 
@@ -38,9 +48,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=10">
-<link rel="stylesheet" href="assets/css/base.css?v=10">
-<link rel="stylesheet" href="assets/css/app.css?v=10">
+<link rel="stylesheet" href="assets/css/tokens.css?v=14">
+<link rel="stylesheet" href="assets/css/base.css?v=14">
+<link rel="stylesheet" href="assets/css/app.css?v=14">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -260,6 +270,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=10"></script>
+<script type="module" src="assets/js/app.js?v=14"></script>
 </body>
 </html>

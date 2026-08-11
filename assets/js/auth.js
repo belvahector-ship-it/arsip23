@@ -22,7 +22,7 @@
    komputer bersama. Token juga tetap berumur ±1 jam dari Google.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=10';
+import { CONFIG } from './config.js?v=14';
 
 const STORAGE_KEY = 'arsip23:idToken';
 
