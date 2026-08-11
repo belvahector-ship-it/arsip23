@@ -20,8 +20,12 @@
 input, textarea, select, button { border-radius: var(--r-sm); }
 
 html {
-  /* 106.25% dari 16px = 17px (CP-06, demi warga sepuh) */
-  font-size: 106.25%;
+  /* Basis 16px, mengikuti situs induk — TURUN dari 17px yang dipakai tema
+     BRUTAL (dinaikkan demi warga sepuh, CP-06). Keterbacaan tidak dikorbankan
+     karena tema ini menggantinya dengan BOBOT: judul dan label memakai 800–900
+     dan angka memakai 800 monospace, yang pada ukuran sama jauh lebih mudah
+     dibaca daripada teks 400. Lantai ukuran terkecil tetap dijaga 12px. */
+  font-size: 100%;
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
   /* Header sticky + pita marquee ~120px, supaya anchor tidak tertutup */
@@ -106,17 +110,21 @@ p { text-wrap: pretty; }
 
 strong, b { font-weight: 700; }
 
-/* Angka selalu tabular — kolom rupiah harus lurus, dan lebarnya tidak boleh
-   berubah saat nilainya di-animasi menghitung naik.
+/* Angka MONOSPACE, dan itu bukan sekadar demi kolom yang lurus — inilah salah
+   satu dari empat hal yang membuat tema ini terbaca sebagai layar mesin alih-
+   alih laporan biasa (lihat kepala tokens.css). Situs induk memakai JetBrains
+   Mono bobot 900; di sini tumpukan --font-num jatuh ke monospace bawaan
+   sistem selama berkas woff2-nya belum ada.
 
-   Tema lama memakai JetBrains Mono untuk ini. Manrope kini menggantikannya:
-   `tabular-nums` memberi lebar angka yang seragam, jadi kolom tetap rata
-   tanpa perlu font monospace ketiga yang memecah identitas dua-font. */
+   Bobot 800, bukan 400: angka di tema ini SELALU tebal, termasuk di dalam
+   tabel. Angka tipis di antara label bobot 700 terbaca sebagai teks sekunder,
+   padahal angkanya justru inti seluruh halaman. */
 .num {
   font-family: var(--font-num);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ls-num);
 }
 
 /* Angka besar (saldo, statistik). SATU sistem angka untuk seluruh situs —
@@ -125,9 +133,10 @@ strong, b { font-weight: 700; }
    saldo ke baris jurnal. Bobotnya yang membedakan, bukan fontnya. */
 .num--display {
   font-family: var(--font-num);
-  font-weight: 800;
+  font-weight: 900;
+  font-size: var(--fs-lg);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: var(--ls-num);
 }
 
 /* Label kecil huruf besar — penanda bahasa BRUTAL di seluruh situs.
@@ -143,18 +152,21 @@ strong, b { font-weight: 700; }
 
 .eyebrow--accent { color: var(--accent); }
 
-/* Eyebrow sebagai LENCANA PIL — amber berbingkai charcoal dengan sudut
-   penuh bulat. Bentuk pil (bukan kotak seperti tema lama) adalah wujud
-   "highlight badge" di spesifikasi bagian 5B. Dipakai untuk penanda paling
-   penting saja. */
+/* Eyebrow sebagai LENCANA — amber, kontur --ink, sudut 8px, bayangan keras
+   3px. Diukur dari lencana sorotan di situs induk.
+
+   BUKAN pil (--r-pill): pada elemen sependek ini, radius penuh mengubahnya
+   jadi kapsul dan menghapus kesan "kotak bertumpuk" yang dibawa bayangan
+   kerasnya. Di tema ini radius selalu mengikuti UKURAN elemen, bukan selera. */
 .eyebrow--badge {
   display: inline-block;
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--sp-1) var(--sp-3);
   background: var(--highlight);
   color: var(--highlight-ink);
   border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-pill);
-  box-shadow: var(--sh-1);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-2);
+  font-weight: 800;
 }
 
 /* Paragraf pengantar dinaikkan dari --ink-3 (#666, 5.74:1) ke --ink-2
@@ -175,32 +187,34 @@ strong, b { font-weight: 700; }
 .text-pos { color: var(--success-ink); }
 .text-neg { color: var(--critical-ink); }
 
-/* --- Sorotan blok (pil penyorot) -------------------------------------------
-   Pola tanda tangan spesifikasi bagian 5B: frasa kunci di dalam judul
-   dibungkus PIL berwarna, bukan sekadar dicoret stabilo persegi seperti tema
-   lama. Radius penuh + padding horizontal lebih lebar itulah yang membedakan
-   "soft neubrutalism" dari brutalism di level detail terkecil.
+/* --- Sorotan blok (frasa tersorot) -----------------------------------------
+   Frasa kunci di dalam judul dibungkus kotak berwarna berkontur, dengan
+   bayangan keras 1px. Diukur dari sorotan inline di situs induk: sudut 4px,
+   border 1px, `shadow 1px 1px 0`.
 
-   Kontras dijaga pada masing-masing pasangan: putih di atas #EF4444 (3.76:1)
-   dan di atas #0EA5E9 (2.9:1) hanya lulus AA untuk teks BESAR — jadi kedua
-   varian itu tidak boleh dipakai di luar judul. .highlight-yellow (charcoal
-   di atas amber, 12.9:1) aman di ukuran berapa pun, dan itulah sebabnya ia
-   yang dipakai sebagai penyorot utama tema ini. */
+   Ketiga varian memakai teks --ink, TIDAK ada yang memakai teks putih.
+   Alasannya kontras: putih di atas #FF6467 hanya 2.6:1 dan di atas #51A2FF
+   2.2:1 — keduanya gagal WCAG bahkan untuk teks besar. --ink di atas ketiga
+   isian itu berkisar 6,7–14,6:1, jadi aman di ukuran berapa pun sekaligus
+   membuat sorotannya terlihat sebagai satu keluarga. */
 
 .highlight-red,
 .highlight-blue,
 .highlight-yellow {
-  padding: 0.05em 0.4em;
-  border-radius: var(--r-pill);
+  padding: 0.05em 0.35em;
+  border: var(--bw-1) solid var(--ink);
+  border-radius: var(--r-xs);
+  box-shadow: var(--sh-xs);
+  color: var(--ink);
   /* box-decoration-break menjaga latar tetap utuh ketika judul patah baris —
      tanpa ini, potongan kedua kehilangan padding kirinya. */
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
-.highlight-red    { background: var(--accent-red);   color: #FFFFFF; }
-.highlight-blue   { background: var(--accent-blue);  color: #FFFFFF; }
-.highlight-yellow { background: var(--accent-amber); color: var(--ink); }
+.highlight-red    { background: var(--accent-red); }
+.highlight-blue   { background: var(--accent-blue); }
+.highlight-yellow { background: var(--accent-amber); }
 
 /* --- Primitif tata letak -------------------------------------------------- */
 
@@ -267,8 +281,8 @@ strong, b { font-weight: 700; }
   .grid-2 { grid-template-columns: minmax(0, 1fr); }
 }
 
-/* Garis pemisah — tipis, memakai --line-soft. Tema lama memakai palang hitam
-   setebal 3px; di halaman dengan banyak kartu, garis setebal itu terbaca
+/* Garis pemisah — tipis, memakai --line-soft. Tema BRUTAL memakai palang
+   hitam setebal 3px; di halaman penuh kartu, garis setebal itu terbaca
    sebagai objek tersendiri alih-alih sebagai pemisah. */
 .rule {
   height: 1px;
@@ -286,28 +300,51 @@ strong, b { font-weight: 700; }
 
 .brutal-border {
   border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-lg);
+  border-radius: var(--r-xl);
 }
+
+/* ==========================================================================
+   GERAK TEKAN — POLA INTI TEMA INI
+
+   Dipakai ULANG oleh setiap elemen yang bisa ditekan (.btn, .card,
+   .card__menu, .gsi-frame). Kalau menambah komponen baru yang bisa diklik,
+   ikuti pola ini persis, jangan mengarang nilai sendiri — nilai yang
+   berbeda-beda membuat halaman terasa goyah tanpa ada yang bisa menunjuk
+   penyebabnya.
+
+     istirahat → bayangan Npx, tidak bergeser
+     hover     → NAIK 1px, bayangan MEMBESAR satu tingkat
+     ditekan   → GESER +2px,+2px, bayangan HILANG SAMA SEKALI
+
+   Langkah ketiga itu yang paling penting dan paling gampang salah. Bayangannya
+   tidak "mengecil" — ia jadi `0 0 0`. Kotaknya rata menempel ke halaman,
+   persis tombol karet yang ditekan sampai mentok. Bayangan yang cuma menyusut
+   terbaca sebagai kotak yang bergoyang, bukan tombol yang ditekan.
+   ========================================================================== */
 
 .brutal-shadow {
   box-shadow: var(--sh-1);
-  transition: transform var(--t-fast) var(--ease-out),
-              box-shadow var(--t-fast) var(--ease-out);
+  transition: transform var(--t-press) var(--ease-mid),
+              box-shadow var(--t-press) var(--ease-mid);
 }
 
-/* Efek "terangkat", kebalikan dari tema lama. Dulu hover menekan elemen TURUN
-   ke arah bayangannya (meniru tombol fisik yang ditekan). Sekarang hover
-   mengangkatnya NAIK 2px sambil memperdalam bayangan — bahasa kartu
-   dashboard, di mana hover berarti "ini bisa dibuka", bukan "ini sedang
-   kamu tekan". Reaksi tekan yang sesungguhnya pindah ke `:active`. */
 .brutal-shadow:hover {
-  box-shadow: var(--sh-2);
-  transform: translateY(-2px);
+  box-shadow: var(--sh-1-hover);
+  transform: translate(var(--hover-lift), var(--hover-lift));
 }
 
 .brutal-shadow:active {
-  box-shadow: var(--sh-1-press);
-  transform: translateY(0);
+  box-shadow: var(--sh-press);
+  transform: translate(var(--press-shift), var(--press-shift));
+}
+
+/* Gerak tekan ini adalah UMPAN BALIK, bukan dekorasi — tapi bagi sebagian
+   orang gerak justru memicu pusing atau mual. Untuk mereka, bayangannya tetap
+   berubah (informasinya utuh: masih terlihat jelas mana yang sedang ditekan),
+   yang dilepas hanya geserannya. */
+@media (prefers-reduced-motion: reduce) {
+  .brutal-shadow:hover,
+  .brutal-shadow:active { transform: none; }
 }
 
 /* --- Pola kisi dekoratif --------------------------------------------------- */
@@ -372,7 +409,7 @@ strong, b { font-weight: 700; }
   background: var(--highlight);
   color: var(--ink);
   border: var(--bw-2) solid var(--ink);
-  border-radius: var(--r-pill);
+  border-radius: var(--r-lg);
   box-shadow: var(--sh-2);
   font-size: var(--fs-sm);
   font-weight: 700;

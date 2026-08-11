@@ -1,63 +1,72 @@
 /* ==========================================================================
-   TOKENS — Tema "SOFT NEUBRUTALISM" (Modern Clean Dashboard hybrid)
+   TOKENS — Tema "NEO CONSOLE" (neubrutalism bayangan keras)
    Sumber tunggal untuk warna, tipografi, spasi, bentuk, dan gerak.
    Ubah di sini, seluruh situs ikut. Jangan menulis hex mentah di berkas lain.
 
-   Tema ini MENGGANTIKAN tema BRUTAL (empat warna primer murni, sudut 0,
-   bayangan keras 8px). Yang dipertahankan dari pendahulunya hanya satu hal
-   — dan justru hal itu yang membuatnya masih terbaca sebagai keluarga yang
-   sama: setiap kotak punya KONTUR TEGAS. Yang berubah adalah segala sesuatu
-   di sekitar kontur itu:
+   SEMUA NILAI DI BAWAH DIUKUR LANGSUNG dari situs induk yang sudah berjalan,
+   https://keuangan-rt-797376710565.asia-southeast1.run.app — bukan ditebak
+   dari tangkapan layar dan bukan diambil dari angka "estetis" di dokumen
+   spesifikasi. Kalau nanti ada yang perlu dicocokkan ulang, cocokkan ke situs
+   itu, karena di situlah kebenarannya.
 
-     BRUTAL (lama)                    SOFT NEUBRUTALISM (baru)
-     ─────────────────────────────    ─────────────────────────────────
-     border 3px hitam #000            border 2px charcoal #111827
-     sudut 0 di mana pun              sudut membulat 8–16px, pil 999px
-     bayangan keras 8px offset        bayangan halus ber-blur, tipis
-     merah/biru/kuning primer murni   amber / emerald / coral / sky
-     latar putih murni                latar netral terang #F8F9FA
+   YANG MEMBUAT TEMA INI TERASA SEPERTI KONSOL GAME JADUL — dan yang paling
+   mudah hilang kalau seseorang "merapikan"-nya nanti:
 
-   Alasannya bukan selera. Isi Arsip23 adalah THUMBNAIL FOTO warga — ratusan
-   kotak gambar berwarna-warni dalam satu grid. Warna primer murni di border
-   dan bayangan hitam 8px berebut perhatian dengan foto-fotonya sendiri;
-   kontur tipis charcoal dan bayangan halus membiarkan isinya yang bicara,
-   tanpa kehilangan ketegasan yang membuat tiap kartu terbaca sebagai objek
-   terpisah.
+     1. BAYANGAN KERAS, TANPA BLUR. `Npx Npx 0 #0F172A` — offset penuh, warna
+        pekat, blur NOL. Mengganti satu saja dengan bayangan ber-blur langsung
+        mengubahnya jadi dashboard biasa. Ini bukan preferensi; ini identitas.
+     2. KEDALAMAN BAYANGAN = KEPENTINGAN. 1px untuk lencana kecil sampai 6px
+        untuk kartu utama. Tumpukan inilah yang membangun hierarki, bukan
+        warna dan bukan ukuran font.
+     3. TOMBOL BENAR-BENAR "TERTEKAN". Hover: naik 1px, bayangan MEMBESAR.
+        Klik: geser +2px, bayangan HILANG SAMA SEKALI — kotaknya rata menempel
+        ke halaman, persis tombol karet yang ditekan sampai mentok.
+     4. ANGKA MONOSPACE TEBAL. Digit selebar sama, bobot 900. Ini yang
+        membuatnya terbaca sebagai layar mesin, bukan sebagai laporan.
 
-   PERINGATAN — BERKAS INI KINI MENYIMPANG DARI SITUS INDUKNYA.
-   tokens.css dan base.css disalin apa adanya dari kasmenoreh.my.id (CP-03),
-   dan aturannya selama ini: jangan diedit tangan di sini, edit di sumbernya
-   lalu salin ulang. Perubahan tema ini MELANGGAR aturan itu secara sadar,
-   karena desain barunya diminta untuk Arsip23 lebih dulu. Selama situs induk
-   belum ikut diperbarui, menyalin ulang tokens.css dari sana akan MENGEMBALIKAN
-   tema BRUTAL dan membatalkan seluruh perubahan ini tanpa peringatan apa pun.
+   Tema ini menggantikan tema BRUTAL (primer murni, sudut 0, bayangan hitam
+   8px). Bayangan kerasnya diwarisi; yang berubah adalah sudut jadi membulat,
+   palet jadi lembut, dan tinta jadi navy-charcoal alih-alih hitam penuh.
+
+   PERINGATAN — BERKAS INI MENYIMPANG DARI SALINAN DI SITUS INDUK.
+   tokens.css dan base.css selama ini disalin apa adanya dari sana (CP-03) dan
+   tidak boleh diedit tangan di sini. Aturan itu dilanggar secara sadar. Selama
+   induknya belum ikut diperbarui, MENYALIN ULANG tokens.css dari sana akan
+   mengembalikan tema BRUTAL dan menghapus seluruh perubahan ini tanpa
+   peringatan apa pun.
 
    Rujukan keputusan: DECISIONS.md (repo ini) CP-27.
    ========================================================================== */
 
 /* ==========================================================================
-   FONT DIMUAT DARI SINI, BUKAN DARI CDN GOOGLE
+   FONT
 
-   Sebelumnya tiap halaman memanggil fonts.googleapis.com lewat <link>. Itu
-   berarti tipografi seluruh situs bergantung pada permintaan jaringan yang
-   bisa gagal — dan di jaringan RT yang putus-putus, ia gagal cukup sering.
-   Yang terlihat bukan "sedang offline", melainkan judul yang tiba-tiba
-   berganti font sistem: situsnya terlihat rusak justru pada saat ia
-   sebenarnya bekerja persis seperti seharusnya.
+   Situs induk memakai TIGA font, dan pembagiannya bukan hiasan:
 
-   Spesifikasi desain baru meminta "sans-serif modern (Inter, Plus Jakarta
-   Sans, atau Montserrat)". Archivo dan Manrope DIPERTAHANKAN dan tidak
-   diganti: keduanya persis kategori yang sama (grotesque modern dengan
-   x-height besar), keduanya sudah ada sebagai berkas woff2 lokal 58 KB,
-   dan menggantinya berarti mengembalikan ketergantungan jaringan yang
-   sengaja dihapus (keputusan font-lokal di situs induk) — biaya nyata untuk
-   perbedaan yang tidak akan pernah disadari satu pun warga.
+     Space Grotesk     → judul & logo (900, UPPERCASE, tracking -0.4px)
+     Plus Jakarta Sans → teks isi
+     JetBrains Mono    → SEMUA angka (900, tracking -0.5px)
 
-   Keduanya font VARIABEL, jadi satu berkas per keluarga sudah memuat
-   seluruh rentang bobot yang dipakai proyek ini. Hanya subset LATIN.
+   Ketiganya BELUM ada sebagai berkas lokal di repo ini; yang ada hanya
+   Archivo + Manrope. Karena itu tiap tumpukan di bawah menyebut font aslinya
+   LEBIH DULU, lalu jatuh ke font lokal yang paling dekat:
 
-   Rujukan keputusan: DECISIONS.md kasmenoreh.my.id CP-27 (font lokal).
-   Jangan tertukar dengan CP-27 di repo INI, yang mencatat pergantian tema.
+     - Kalau ketiga woff2-nya nanti ditambahkan ke assets/font/ dan
+       dideklarasikan @font-face di bawah, tipografinya langsung persis sama
+       tanpa perlu menyentuh satu baris pun di berkas lain.
+     - Selama belum, Archivo (grotesque, sekerabat dengan Space Grotesk) dan
+       Manrope menanggungnya, dan situs tetap bekerja penuh saat offline.
+
+   Untuk ANGKA, penggantinya BUKAN Manrope melainkan monospace bawaan sistem
+   (Cascadia Mono/Consolas di Windows). Ini disengaja: lebar digit yang seragam
+   dan bentuk mono itulah yang memberi kesan "layar mesin" — kalau angka jatuh
+   ke font teks biasa, satu-satunya ciri paling khas tema ini ikut hilang,
+   jauh lebih terasa daripada judul yang fontnya meleset sedikit.
+
+   Font TIDAK BOLEH dimuat dari fonts.googleapis.com. Tipografi seluruh situs
+   akan bergantung pada permintaan jaringan yang di jaringan RT sering gagal,
+   dan gejalanya bukan "sedang offline" melainkan halaman yang terlihat rusak.
+   Kalau ketiganya ditambahkan, tambahkan sebagai woff2 LOKAL.
    ========================================================================== */
 
 @font-face {
@@ -80,162 +89,151 @@
 }
 
 :root {
-  /* --- Palet aksen ---------------------------------------------------------
-     Empat warna aksen kontras tinggi, sesuai spesifikasi bagian 2. Berbeda
-     dari tema lama, ini BUKAN primer murni: masing-masing sudah dikalibrasi
-     agar tetap enak dilihat sebagai isian besar (kuning tidak menyilaukan,
-     merah tidak berteriak) sambil tetap langsung dikenali maknanya. */
-  --accent-amber:   #FACC15;   /* sorotan, tombol utama, lencana */
-  --accent-amber-2: #F59E0B;   /* varian lebih dalam, untuk hover isian */
-  --accent-green:   #10B981;   /* pemasukan, lunas, berhasil */
-  --accent-red:     #EF4444;   /* pengeluaran, defisit, hapus */
-  --accent-blue:    #0EA5E9;   /* info, tautan, indikator warga */
+  /* --- Tinta ----------------------------------------------------------------
+     #0F172A (slate-900). SATU nilai ini dipakai untuk TIGA hal sekaligus:
+     teks utama, SEMUA border, dan SEMUA bayangan. Itulah kenapa halamannya
+     terlihat menyatu — bukan karena paletnya sedikit, tapi karena kontur dan
+     bayangan tidak pernah punya warna sendiri. */
+  --ink:            #0F172A;
+  --ink-2:          #334155;   /* slate-700 — paragraf sekunder, 9.4:1 */
+  --ink-3:          #64748B;   /* slate-500 — label kecil, 4.76:1 */
 
   /* --- Permukaan ------------------------------------------------------------
-     Dua tingkat, bukan satu. Latar HALAMAN abu sangat terang; latar KARTU
-     putih murni. Selisih tipis itulah yang membuat kartu terangkat tanpa
-     perlu bayangan tebal — di tema lama pekerjaan ini seluruhnya dibebankan
-     ke bayangan keras 8px. */
-  --paper:          #F8F9FA;   /* latar halaman */
+     TIGA permukaan, dan perbedaan krem vs putih itu penting: situs induk
+     memakai krem untuk hal yang MEMBUNGKUS (header, panel besar, callout)
+     dan putih untuk hal yang DIBACA (kartu angka, tabel). */
+  --paper:          #F8FAFC;   /* latar halaman (slate-50) */
   --surface:        #FFFFFF;   /* kartu, tabel, modal */
-  --surface-alt:    #F4F5F7;   /* isian diredam: kepala tabel, blok ekstensi */
-  --surface-sunk:   #E9ECEF;   /* isian paling dalam: bilah progres, skeleton */
-
-  /* --- Tinta ----------------------------------------------------------------
-     Dark charcoal #111827, bukan hitam penuh. Di atas putih ia 17.4:1 —
-     praktis sama terbacanya dengan #000, tapi tanpa kekerasan optis hitam
-     murni yang bikin mata cepat lelah pada teks panjang. */
-  --ink:            #111827;   /* teks utama, judul, ikon, border */
-  --ink-2:          #374151;   /* 10.3:1 — paragraf sekunder */
-  --ink-3:          #6B7280;   /* 4.83:1 — label kecil, keterangan kaki */
+  --surface-cream:  #FFFDF5;   /* header, panel pembungkus, callout */
+  --surface-alt:    #F1F5F9;   /* isian diredam: tombol netral, blok ekstensi */
+  --surface-sunk:   #E2E8F0;   /* isian paling dalam: bilah progres, skeleton */
 
   /* --- Garis ----------------------------------------------------------------
-     Tema lama menghitamkan SEMUA garis, termasuk pemisah internal ("kalau
-     sebuah garis tidak layak hitam, garis itu tidak layak ada"). Tema ini
-     memisahkan keduanya secara tegas, karena keduanya memang beda pekerjaan:
+     Border SELALU --ink. Tidak ada border abu-abu di tema ini — kontur itulah
+     yang memisahkan objek, dan kontur yang samar berarti objek yang samar.
+     --line-soft hanya untuk pemisah DI DALAM satu kotak (baris tabel, antar
+     item), tempat kontur penuh akan memecah satu kartu jadi tumpukan kotak. */
+  --line:           #0F172A;
+  --line-soft:      #E2E8F0;
+  --line-strong:    #0F172A;
 
-       --line        → KONTUR objek (kartu, tombol, modal). Charcoal penuh.
-       --line-soft   → PEMISAH di dalam objek (baris tabel, antar item).
-                       Abu terang; menghitamkannya memecah satu kartu jadi
-                       tumpukan kotak-kotak kecil yang saling bersaing. */
-  --line:           #111827;
-  --line-soft:      #E5E7EB;
-  --line-strong:    #111827;
+  --footer-bg:      #FFFDF5;
 
-  --footer-bg:      #FFFFFF;
+  /* --- Palet aksen ----------------------------------------------------------
+     Nilai-nilai ini diambil dari piksel yang BENAR-BENAR TERGAMBAR di situs
+     induk, bukan dari tabel warna Tailwind. Situs itu menulis warnanya dalam
+     oklch(), dan hasil konversinya ke layar sRGB tidak sama dengan hex
+     Tailwind yang setara: yellow-300 tergambar #FFDF20, bukan #FDE047 —
+     lebih tajam dan lebih hijau. Yang dicocokkan adalah yang terlihat. */
+  --accent-amber:   #FFDF20;   /* yellow-300 — aksen utama */
+  --accent-amber-2: #FFC800;   /* hover isian amber */
+  --accent-green:   #5EE9B5;   /* emerald-300 — lunas, pemasukan, berhasil */
+  --accent-red:     #FF6467;   /* red-400 — pengeluaran, defisit, hapus */
+  --accent-blue:    #51A2FF;   /* blue-400 — info, indikator warga */
+  --accent-amber-soft: #FEE685;/* amber-200 — isian paling redup */
 
   /* --- Aksen interaktif -----------------------------------------------------
-     Sky blue #0EA5E9 hanya 2.9:1 di atas putih — cantik sebagai ISIAN, tapi
-     mustahil sebagai teks kecil. Karena itu tautan memakai varian gelapnya
-     (#0369A1, 5.7:1) sementara isian lencana tetap memakai yang cerah.
-     Pemisahan isian-vs-teks ini berlaku untuk SETIAP warna aksen di berkas
-     ini, dan selalu ditandai akhiran `-ink`. */
-  --accent:         #0369A1;   /* teks tautan, fokus */
-  --accent-hover:   #075985;
-  --accent-fill:    #0EA5E9;   /* isian lencana/ikon "info" */
-  --accent-soft:    #E0F2FE;
-  --accent-line:    #0EA5E9;
+     Setiap warna aksen punya DUA nilai, dan memakai yang salah adalah cara
+     paling gampang merusak keterbacaan tema ini:
 
-  /* Amber CTA — SELALU sebagai isian dengan teks charcoal di atasnya
-     (#111827 di atas #FACC15 = 12.9:1), tidak pernah sebagai warna teks. */
-  --highlight:      #FACC15;
-  --highlight-hover:#F59E0B;
-  --highlight-ink:  #111827;
-  --highlight-soft: #FEF9C3;   /* callout krem, mis. kotak peringatan defisit */
+       (tanpa akhiran)  → ISIAN. Cerah. Teks di atasnya selalu --ink.
+       -ink             → TEKS. Gelap. Satu-satunya yang boleh jadi teks kecil.
+
+     Isian cerah sebagai warna teks selalu gagal WCAG: #FFDF20 hanya 1.1:1 di
+     atas putih, #5EE9B5 1.7:1, #51A2FF 2.6:1. */
+  --accent:         #1447E6;   /* teks tautan — 6.4:1 di atas putih */
+  --accent-hover:   #193CB8;
+  --accent-fill:    #51A2FF;
+  --accent-soft:    #DBEAFE;
+  --accent-line:    #51A2FF;
+
+  /* Amber CTA — SELALU isian dengan teks --ink di atasnya (#0F172A di atas
+     #FFDF20 = 14.6:1), tidak pernah sebagai warna teks. */
+  --highlight:      #FFDF20;
+  --highlight-hover:#FFC800;
+  --highlight-ink:  #0F172A;
+  --highlight-soft: #FEF9C2;   /* callout krem-kuning */
 
   /* --- Merah kritis ---------------------------------------------------------
-     #EF4444 di atas putih hanya 3.76:1 — LULUS untuk teks besar (≥24px, atau
-     ≥18.7px tebal) tapi GAGAL untuk teks kecil. Karena situs ini dibaca warga
-     sepuh (CP-06), pembagiannya dibuat eksplisit:
+     #FF6467 di atas putih hanya 3.1:1 — GAGAL untuk teks kecil, dan situs ini
+     dibaca warga sepuh (CP-06). Isian dan teks karena itu dipisah tegas. */
+  --critical:       #FF6467;
+  --critical-ink:   #C10007;   /* 6.5:1 — satu-satunya merah untuk teks kecil */
+  --critical-soft:  #FFE2E2;
+  --critical-line:  #FF6467;
 
-       --critical      → isian, border, angka besar, judul yang disorot
-       --critical-ink  → SATU-SATUNYA merah yang boleh jadi teks kecil (4.83:1) */
-  --critical:       #EF4444;
-  --critical-ink:   #DC2626;
-  --critical-soft:  #FEE2E2;
-  --critical-line:  #EF4444;
-
-  /* --- Hijau positif --------------------------------------------------------
-     Pola yang sama. #10B981 sebagai teks kecil cuma 2.3:1 — tidak pernah
-     dipakai begitu; --success-ink (#047857, 4.9:1) yang dipakai. */
-  --success:        #10B981;
-  --success-ink:    #047857;
-  --success-soft:   #D1FAE5;
+  /* --- Hijau positif -------------------------------------------------------- */
+  --success:        #5EE9B5;
+  --success-ink:    #007A55;   /* 4.8:1 */
+  --success-soft:   #D0FAE5;
 
   /* --- Tiga pos dana --------------------------------------------------------
-     Dipakai situs induk (matrik iuran I/P/L) dan diwarisi apa adanya supaya
-     tokens.css tetap satu berkas untuk kedua situs. Warna hanya penguat,
-     tidak pernah satu-satunya penyampai makna — selalu didampingi huruf. */
-  --pos-iuran:      #0EA5E9;
-  --pos-ipal:       #FACC15;
-  --pos-lelayu:     #EF4444;
-  --pos-iuran-soft: #E0F2FE;
-  --pos-ipal-soft:  #FEF9C3;
-  --pos-lelayu-soft:#FEE2E2;
-
-  /* Amber sebagai warna TEKS mustahil dibaca. Nilai coklat-amber gelap ini
-     dipakai di tempat pos-ipal muncul sebagai teks/ikon, bukan isian (6.6:1). */
-  --pos-ipal-ink:   #854D0E;
+     Dipakai situs induk untuk matrik iuran (huruf I/P/L). Warna hanya
+     penguat — huruf-nya yang menyampaikan makna, supaya tetap terbaca oleh
+     mata yang sulit membedakan warna. */
+  --pos-iuran:      #5EE9B5;
+  --pos-ipal:       #51A2FF;
+  --pos-lelayu:     #FFDF20;
+  --pos-iuran-soft: #D0FAE5;
+  --pos-ipal-soft:  #DBEAFE;
+  --pos-lelayu-soft:#FEF9C2;
+  --pos-ipal-ink:   #193CB8;
 
   /* --- Fokus ----------------------------------------------------------------
-     Cincin dua lapis: satu cincin --paper sebagai jarak, lalu cincin biru.
-     Dua lapis supaya tetap terlihat baik di atas putih maupun di atas isian
-     berwarna (amber, merah) yang sudah gelap sendiri. */
-  --focus:          #0284C7;
+     Cincin dua lapis supaya tetap terlihat di atas putih MAUPUN di atas isian
+     amber/hijau yang sudah terang sendiri. */
+  --focus:          #1447E6;
   --focus-ring:     0 0 0 3px var(--surface), 0 0 0 6px var(--focus);
 
   /* --- Latar halaman --------------------------------------------------------
-     Semua tekstur dekoratif (aurora blur, butiran kertas, kisi garis)
-     DIMATIKAN. Latar netral #F8F9FA sudah jadi permukaan tersendiri di tema
-     ini — menumpuk pola di atasnya membuat thumbnail foto warga terlihat
-     kotor. Nama variabelnya dipertahankan supaya elemen DOM `.bg-canvas`
-     tidak perlu dibongkar dari berkas HTML. */
-  --aurora-a:       #0EA5E9;
-  --aurora-b:       #FACC15;
+     Semua tekstur dekoratif dimatikan. Nama variabelnya dipertahankan supaya
+     elemen `.bg-canvas` di berkas HTML tidak perlu dibongkar. */
+  --aurora-a:       #51A2FF;
+  --aurora-b:       #FFDF20;
   --aurora-opacity: 0;
   --grid-opacity:   0;
   --grain-opacity:  0;
   --grid-size:      40px;
 
-  /* --- Tipografi ------------------------------------------------------------
-     KETERBACAAN MENANG ATAS GAYA. Pembacanya warga sepuh (CP-06).
+  /* --- Tipografi ------------------------------------------------------------ */
+  --font-display: 'Space Grotesk', 'Archivo', 'Segoe UI', system-ui, sans-serif;
+  --font-text:    'Plus Jakarta Sans', 'Manrope', 'Segoe UI', system-ui, sans-serif;
+  /* Monospace bawaan sistem sebagai pengganti JetBrains Mono — lihat catatan
+     panjang di kepala berkas soal kenapa angka TIDAK boleh jatuh ke font teks. */
+  --font-num:     'JetBrains Mono', ui-monospace, 'Cascadia Mono', 'Segoe UI Mono',
+                  Consolas, 'Liberation Mono', monospace;
 
-     Skala di bawah SENGAJA lebih tenang daripada tema BRUTAL. Di sana judul
-     "memang harus terasa terlalu besar" — itu bagian dari bahasanya. Di
-     dashboard, judul raksasa justru mendorong data (yang merupakan seluruh
-     alasan halaman ini ada) turun ke bawah lipatan. Spesifikasi bagian 3
-     mematok hero 32–40px dan section header 18–22px; nilai clamp di bawah
-     mendarat persis di rentang itu pada desktop. */
-  --font-display: 'Archivo', 'Segoe UI', system-ui, sans-serif;
-  --font-text:    'Manrope', 'Segoe UI', system-ui, sans-serif;
-  --font-num:     'Manrope', 'Segoe UI', system-ui, sans-serif;
+  /* Basis 16px, mengikuti situs induk. Ini TURUN dari 17px yang dipakai tema
+     BRUTAL (CP-06, dinaikkan demi warga sepuh) — dan itu disengaja: tema ini
+     memakai bobot 800–900 di hampir semua judul dan label, yang menambah
+     keterbacaan lewat ketebalan alih-alih lewat ukuran. Ukuran kecil di skala
+     bawah tetap dijaga di atas 12px. */
+  --fs-2xs:  0.75rem;   /* 12px — label lencana, keterangan kaki */
+  --fs-xs:   0.8125rem; /* 13px */
+  --fs-sm:   0.875rem;  /* 14px */
+  --fs-base: 1rem;      /* 16px */
+  --fs-md:   1.125rem;  /* 18px */
+  --fs-lg:   1.25rem;   /* 20px — nilai nominal di kartu metrik */
+  /* Batas BAWAH tiap clamp ditentukan kata terpanjang yang harus muat di layar
+     320px, bukan dipilih karena enak dilihat. Judul di tema ini uppercase dan
+     bobot 900, jadi ia jauh lebih lebar daripada teks biasa pada ukuran sama. */
+  --fs-xl:   clamp(1.125rem, 1rem + 0.6vw, 1.375rem);   /* section header */
+  --fs-2xl:  clamp(1.375rem, 1.15rem + 1.1vw, 1.75rem);
+  --fs-3xl:  clamp(1.625rem, 1.3rem + 1.7vw, 2.25rem);
+  --fs-hero: clamp(1.5rem, 1.1rem + 2.2vw, 2.5rem);     /* 32–40px di desktop */
 
-  /* Basis 17px (bukan 16px) dipertahankan dari CP-06 — dinaikkan demi warga
-     sepuh. Semua ukuran memakai rem, jadi satu angka ini menggeser seluruh
-     skala. */
-  --fs-2xs:  0.8rem;
-  --fs-xs:   0.86rem;
-  --fs-sm:   0.94rem;
-  --fs-base: 1rem;
-  --fs-md:   1.15rem;
-  --fs-lg:   1.35rem;
-  /* Batas BAWAH tiap clamp ditentukan oleh kata terpanjang yang harus muat
-     di layar 320px, bukan dipilih karena enak dilihat. */
-  --fs-xl:   clamp(1.35rem, 1.15rem + 1.1vw, 1.7rem);   /* section header */
-  --fs-2xl:  clamp(1.6rem, 1.25rem + 1.7vw, 2.1rem);
-  --fs-3xl:  clamp(1.9rem, 1.4rem + 2.4vw, 2.6rem);
-  --fs-hero: clamp(1.75rem, 1.2rem + 3.2vw, 2.5rem);    /* 32–40px di desktop */
-
-  --lh-tight: 1.18;
+  --lh-tight: 1.15;
   --lh-snug:  1.35;
   --lh-base:  1.6;
   --lh-loose: 1.75;
 
-  /* Tracking negatif merapatkan huruf sampai saling menempel — musuh
-     keterbacaan. Hanya judul besar yang sedikit dirapatkan. */
-  --ls-display: -0.015em;
-  --ls-tight:   -0.005em;
-  --ls-label:    0.06em;   /* tracking lebar pada label uppercase pendek */
+  /* Tracking NEGATIF pada judul dan angka — diukur dari situs induk: judul
+     -0.4px, angka -0.5px pada 16–20px. Dinyatakan dalam em supaya ikut
+     menyesuaikan saat ukurannya berubah. */
+  --ls-display: -0.025em;
+  --ls-num:     -0.025em;
+  --ls-tight:   -0.01em;
+  --ls-label:    0.06em;   /* tracking LEBAR pada label uppercase pendek */
 
   /* --- Spasi (kelipatan 4) --------------------------------------------------- */
   --sp-1:  0.25rem;
@@ -250,85 +248,99 @@
   --sp-10: 8rem;
 
   --section-y: clamp(2.5rem, 1.8rem + 3.5vw, 4rem);
-  /* Spesifikasi bagian 4 mematok padding horizontal 24px. Nilai itu jadi
-     batas ATAS di sini, bukan nilai tetap: di layar 320px, 24px di kiri dan
-     kanan memakan 15% lebar layar sebelum satu huruf pun tergambar. */
+  /* 24px jadi batas ATAS, bukan nilai tetap: di layar 320px, 24px kiri-kanan
+     memakan 15% lebar layar sebelum satu huruf pun tergambar. */
   --gutter:    clamp(1rem, 0.5rem + 1.6vw, 1.5rem);
   --measure:   68ch;
   --container: 1280px;
   --container-narrow: 860px;
 
   /* --- Bentuk ---------------------------------------------------------------
-     Inilah perubahan yang paling terasa dari tema lama (semuanya 0px).
-     Spesifikasi bagian 5 mematok kartu 16px dan lencana pil 20px+. */
-  --r-sm:   8px;    /* input, ikon kecil, sel */
-  --r-md:   12px;   /* tombol, blok dalam kartu */
-  --r-lg:   16px;   /* kartu, panel, modal */
-  --r-xl:   20px;   /* kontainer besar */
-  --r-pill: 999px;  /* lencana, dropdown pil, tombol bundar */
+     Diukur dari situs induk. Perhatikan bahwa semakin KECIL sebuah elemen,
+     semakin kecil radiusnya — lencana 22px memakai 6px, kartu memakai 16px.
+     Memakai radius besar pada elemen kecil membuatnya jadi kapsul dan
+     kehilangan kesan "tombol". */
+  --r-xs:   4px;    /* lencana huruf I/P/L, sorotan teks */
+  --r-sm:   6px;    /* ikon kecil, chip */
+  --r-md:   8px;    /* tombol kecil, select, input */
+  --r-lg:   12px;   /* tombol, panel dalam, logo mark */
+  --r-xl:   16px;   /* KARTU — bentuk paling sering terlihat di halaman */
+  --r-pill: 999px;  /* titik legenda, avatar */
 
   /* --- Ketebalan border -----------------------------------------------------
-     Spesifikasi bagian 5C mematok kontur kartu "solid 1.5px – 2px" charcoal.
-     Turun drastis dari 3px tema lama: pada grid kartu yang bordernya
-     berdempetan, 3px terbaca sebagai palang hitam, bukan sebagai kontur.
+     SEMUA NILAI BULAT, dan itu bukan kerapian. Peramban menyapu lebar border
+     ke piksel PERANGKAT, dan Windows berjalan pada penskalaan 125% (DPR 1.25)
+     secara bawaan. Di sana 1.5px CSS = 1,875 piksel perangkat, dibulatkan
+     TURUN ke 1 — lebar yang sama persis dengan --bw-1. Hasilnya: pada
+     mayoritas laptop Windows, kontur kartu dan garis pemisah jadi tak
+     terbedakan, dan ketegasan yang jadi identitas tema ini hilang tanpa ada
+     yang bisa menunjuk penyebabnya. Diuji langsung pada DPR 1.25.
 
-     SEMUA NILAI BULAT, dan itu bukan kerapian — 1.5px adalah jebakan nyata.
-     Peramban menyapu (snap) lebar border ke piksel PERANGKAT, dan Windows
-     menjalankan layar pada penskalaan 125% secara bawaan (DPR 1.25). Di
-     sana 1.5px CSS = 1,875 piksel perangkat, yang dibulatkan TURUN ke 1 —
-     lebar yang sama persis dengan --bw-1. Hasilnya: pada mayoritas laptop
-     Windows, kontur kartu dan garis pemisah dalam kartu jadi tak terbedakan,
-     dan seluruh "kontur tegas" yang jadi identitas tema ini hilang tanpa
-     ada yang bisa menunjuk apa yang salah. Diuji langsung di DPR 1.25;
-     2px menyapu ke 2 piksel perangkat dan tetap jelas lebih tebal.
-
-       --bw-1 (1px) → pemisah DI DALAM objek: baris tabel, garis antar item
-       --bw-2 (2px) → KONTUR objek: kartu, tombol, input, lencana
-       --bw-3 (3px) → penegasan: modal, bingkai pratinjau gambar */
+       --bw-1 (1px) → pemisah DI DALAM objek
+       --bw-2 (2px) → KONTUR standar: tombol, lencana, panel dalam
+       --bw-3 (3px) → KONTUR kartu & modal — objek utama halaman */
   --bw-1: 1px;
   --bw-2: 2px;
   --bw-3: 3px;
 
-  /* --- Bayangan -------------------------------------------------------------
-     Ber-blur dan transparan, menggantikan offset keras tanpa blur milik tema
-     lama. Warna bayangan diambil dari charcoal yang sama dengan border
-     (17,24,39) supaya bayangan terbaca sebagai kelanjutan konturnya, bukan
-     sebagai abu-abu asing.
+  /* --- Bayangan keras -------------------------------------------------------
+     INI TANDA TANGAN TEMA. Offset penuh, blur NOL, warna --ink pekat, tanpa
+     transparansi. Delapan tingkat kedalaman = delapan tingkat kepentingan,
+     diukur satu per satu dari situs induk:
 
-       --sh-1 → kartu, tombol, lencana (istirahat)
-       --sh-2 → elemen terangkat: kartu ter-hover, panel, antrian unggah
-       --sh-3 → modal, viewer, elemen paling atas
+       --sh-xs (1px) → titik legenda, lencana I/P/L, tautan inline
+       --sh-1  (2px) → tombol, select, logo mark, tombol ikon
+       --sh-2  (3px) → lencana sorotan, panel sekunder
+       --sh-3  (4px) → panel, wadah tabel, header (khusus, lihat --sh-bar)
+       --sh-4  (5px) → kartu metrik putih
+       --sh-5  (6px) → kartu besar krem, modal
 
-     Pasangan "--press" DIPERTAHANKAN NAMANYA supaya seluruh komponen di
-     app.css tidak perlu dibongkar — tapi maknanya berubah: dulu "bayangan
-     mengecil karena tombol bergeser ke arahnya", sekarang "elevasi turun
-     karena tombol ditekan ke bawah". */
-  --sh-1:       0 1px 2px rgb(17 24 39 / 0.06), 0 1px 3px rgb(17 24 39 / 0.08);
-  --sh-1-press: 0 1px 1px rgb(17 24 39 / 0.10);
-  --sh-2:       0 4px 8px rgb(17 24 39 / 0.06), 0 2px 4px rgb(17 24 39 / 0.06);
-  --sh-2-press: 0 1px 2px rgb(17 24 39 / 0.10);
-  --sh-3:       0 16px 32px rgb(17 24 39 / 0.12), 0 4px 8px rgb(17 24 39 / 0.06);
-  --sh-3-press: 0 4px 8px rgb(17 24 39 / 0.10);
+     Tiap tingkat punya pasangan -hover (SATU tingkat lebih dalam) dan -press.
+     Nilai press-nya `0 0 0` — BUKAN bayangan yang mengecil, tapi bayangan yang
+     HILANG SAMA SEKALI, dipasangkan dengan geseran +2px,+2px. Itulah yang
+     membuat tombolnya terbaca sebagai benda yang benar-benar ditekan rata ke
+     halaman, bukan kotak yang sekadar bergoyang. */
+  --sh-xs:      1px 1px 0 var(--ink);
+  --sh-1:       2px 2px 0 var(--ink);
+  --sh-1-hover: 4px 4px 0 var(--ink);
+  --sh-2:       3px 3px 0 var(--ink);
+  --sh-2-hover: 5px 5px 0 var(--ink);
+  --sh-3:       4px 4px 0 var(--ink);
+  --sh-3-hover: 6px 6px 0 var(--ink);
+  --sh-4:       5px 5px 0 var(--ink);
+  --sh-4-hover: 7px 7px 0 var(--ink);
+  --sh-5:       6px 6px 0 var(--ink);
+  --sh-5-hover: 8px 8px 0 var(--ink);
 
-  /* Bayangan berwarna — dipakai sangat hemat, hanya untuk elemen yang memang
-     mewakili satu kategori tertentu. */
-  --sh-red:    0 6px 16px rgb(239 68 68 / 0.28);
-  --sh-blue:   0 6px 16px rgb(14 165 233 / 0.28);
-  --sh-yellow: 0 6px 16px rgb(250 204 21 / 0.35);
+  /* Ditekan = rata. Satu nilai untuk semua tingkat, karena semuanya berakhir
+     di tempat yang sama: menempel di halaman. */
+  --sh-press:   0 0 0 var(--ink);
+  --sh-1-press: var(--sh-press);
+  --sh-2-press: var(--sh-press);
+  --sh-3-press: var(--sh-press);
+
+  /* Bilah lebar-penuh (header) tidak punya sisi kanan yang terlihat, jadi
+     bayangannya hanya ke bawah — offset ke samping akan menggantung di luar
+     layar dan memicu gulir horizontal. */
+  --sh-bar:     0 4px 0 var(--ink);
+
+  /* Geseran saat ditekan. Dipisah jadi token supaya tidak ada komponen yang
+     diam-diam memakai angka lain — kalau geserannya beda-beda, halaman terasa
+     goyah tanpa ada yang tahu kenapa. */
+  --press-shift: 2px;
+  --hover-lift: -1px;
 
   /* --- Gerak ----------------------------------------------------------------
-     Tema lama "menjepret" (0.1s, nyaris tanpa ekor) karena brutalism memang
-     tidak mengalun. Dashboard yang lembut butuh sebaliknya: transisi sedikit
-     lebih panjang dengan pelambatan di ujung, supaya kartu terasa naik dan
-     turun, bukan berkedip antara dua keadaan. */
-  --t-press: 120ms;
-  --t-fast:  160ms;
+     0.15s ease-mid, diukur dari situs induk. Cukup cepat untuk terasa
+     mekanis, cukup panjang untuk terlihat sebagai gerakan. */
+  --t-press: 150ms;
+  --t-fast:  150ms;
   --t-base:  220ms;
   --t-slow:  320ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in:  cubic-bezier(0.7, 0, 0.84, 0);
   --ease-mid: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-step: cubic-bezier(0.2, 0, 0, 1);
+  --ease-step: cubic-bezier(0.4, 0, 0.2, 1);
 
   --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
 
@@ -342,10 +354,10 @@
   --z-overlay: 60;
   --z-toast:   80;
 
-  --touch: 48px;
+  --touch: 44px;
 
-  /* Mode gelap otomatis tetap DIMATIKAN (CP-20). Tema ini adalah tema terang
-     dengan tinta charcoal; membalikkannya akan menghilangkan kontras
-     kontur-gelap-di-atas-terang yang jadi seluruh identitasnya. */
+  /* Mode gelap otomatis tetap DIMATIKAN (CP-20). Seluruh identitas tema ini
+     adalah kontur dan bayangan GELAP di atas permukaan TERANG; membalikkannya
+     berarti menghapus keduanya. */
   color-scheme: light;
 }
