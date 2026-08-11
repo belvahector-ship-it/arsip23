@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=6';
-import { api, ApiError, setTokenGetter } from './api.js?v=6';
-import * as auth from './auth.js?v=6';
+import { CONFIG } from './config.js?v=7';
+import { api, ApiError, setTokenGetter } from './api.js?v=7';
+import * as auth from './auth.js?v=7';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,7 +27,7 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=6';
+} from './ui.js?v=7';
 
 setTokenGetter(auth.getToken);
 
@@ -46,6 +46,8 @@ const dom = {
   gateGoogle: document.getElementById('gate-google'),
   gateLogin: document.querySelector('.gate__login'),
   gateStep: document.getElementById('gate-step'),
+  gateBody: document.querySelector('#modal-gate .modal__body'),
+  gateScrollCue: document.getElementById('gate-scroll-cue'),
   modalRename: document.getElementById('modal-rename'),
   renameName: document.getElementById('rename-name'),
   renameHint: document.getElementById('rename-hint'),
@@ -316,6 +318,30 @@ function syncGateStep() {
 
 dom.gateCheck.addEventListener('change', syncGateStep);
 
+// Ambang 4px, bukan 0, supaya sisa sub-pixel dari rounding tinggi (lazim di
+// zoom peramban ganjil) tidak membuat isyarat "gulir" berkedip menyala padahal
+// warga sudah benar-benar mentok di dasar.
+const GATE_SCROLL_EPSILON = 4;
+
+function syncGateScrollCue() {
+  const el = dom.gateBody;
+  const hasMore = el.scrollHeight - el.scrollTop - el.clientHeight > GATE_SCROLL_EPSILON;
+  dom.gateScrollCue.classList.toggle('is-visible', hasMore);
+}
+
+dom.gateBody.addEventListener('scroll', syncGateScrollCue, { passive: true });
+window.addEventListener('resize', () => {
+  if (dom.modalGate.open) syncGateScrollCue();
+});
+
+// Sekali ukur setelah `showModal()` TIDAK CUKUP: tinggi isi gerbang berubah
+// belakangan dari beberapa arah sekaligus — swap ke font kustom (Archivo/
+// Manrope) yang baru selesai dimuat setelah render pertama, dan iframe
+// tombol Google yang di-mount async lalu diberi ukuran sendiri oleh Google.
+// ResizeObserver menangkap SEMUA perubahan tinggi badan gerbang itu, dari
+// sumber mana pun, tanpa perlu menebak urutan/waktunya satu per satu.
+new ResizeObserver(syncGateScrollCue).observe(dom.gateBody);
+
 function openGate() {
   syncGateStep();
   if (!dom.modalGate.open) dom.modalGate.showModal();
@@ -323,6 +349,8 @@ function openGate() {
   // Tombol Google dipasang DI DALAM gerbang, bukan di header, supaya tidak ada
   // dua tempat berbeda untuk masuk.
   auth.mountGoogleButton(dom.gateGoogle, onGatePassed);
+
+  syncGateScrollCue();
 }
 
 function closeGate() {

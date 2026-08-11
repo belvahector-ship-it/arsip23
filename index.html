@@ -38,9 +38,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=6">
-<link rel="stylesheet" href="assets/css/base.css?v=6">
-<link rel="stylesheet" href="assets/css/app.css?v=6">
+<link rel="stylesheet" href="assets/css/tokens.css?v=7">
+<link rel="stylesheet" href="assets/css/base.css?v=7">
+<link rel="stylesheet" href="assets/css/app.css?v=7">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -156,6 +156,12 @@
       <div id="gate-google"></div>
     </div>
   </div>
+  <!-- Petunjuk gulir: tombol login ada di bawah teks aturan yang panjang, dan
+       badan modal ini yang menggulir (bukan seluruh dialog) — di layar HP
+       tanpa isyarat ini warga mengira dialog sudah mentok, padahal tombol
+       masuknya belum terlihat. app.js menampilkan/menyembunyikannya lewat
+       kelas `is-visible`, berdasarkan posisi gulir .modal__body. -->
+  <div class="modal__scroll-cue" id="gate-scroll-cue" aria-hidden="true">Gulir untuk lanjut ↓</div>
 </dialog>
 
 <!-- ===================== Modal: folder baru ===================== -->
@@ -243,6 +249,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=6"></script>
+<script type="module" src="assets/js/app.js?v=7"></script>
 </body>
 </html>

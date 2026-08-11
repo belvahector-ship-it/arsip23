@@ -460,7 +460,18 @@
   /* Isi yang lebih tinggi dari layar menggulir DI DALAM badannya, sehingga
      judul dan tombol "Saya Mengerti" tetap terlihat. Kalau seluruh dialog yang
      menggulir, tombol persetujuannya hilang di bawah lipatan — dan di layar HP
-     itulah yang paling sering terjadi pada modal aturan yang panjang ini. */
+     itulah yang paling sering terjadi pada modal aturan yang panjang ini.
+
+     Baris `100vh` di atas `100dvh` adalah fallback yang DISENGAJA, bukan
+     duplikat: peramban yang belum kenal unit `dvh` (Samsung Internet/WebView
+     Android lama) mengabaikan SATU BARIS yang memuatnya, bukan jatuh balik ke
+     nilai lain — tanpa baris `vh` di atasnya, `max-height` jadi tidak
+     ter-set sama sekali di peramban itu, badan modal tidak pernah tahu harus
+     menggulir, dan tombol login Google di gerbang terpotong tanpa ada gulir
+     yang bisa dipakai untuk mencapainya (persis laporan warga: "login tidak
+     muncul" di HP). `100dvh` di baris kedua menimpanya di peramban yang
+     mendukungnya, supaya tinggi tetap benar saat bilah alamat menyembul. */
+  max-height: calc(100vh - 2 * var(--gutter));
   max-height: calc(100dvh - 2 * var(--gutter));
   /* Tanpa ini muncul DUA batang gulir bertumpuk: satu milik <dialog> (yang
      default-nya `overflow: auto`) dan satu milik .modal__body. Yang menggulir
@@ -491,10 +502,22 @@
 
 .modal__body {
   padding: var(--sp-5);
+  /* `env(safe-area-inset-bottom)` menambah ruang di bawah pada HP dengan gestur
+     home-bar (iPhone tanpa tombol fisik): tanpa ini, isi paling bawah —
+     termasuk tombol login Google di gerbang — bisa mendarat tepat di balik
+     bar gestur itu sendiri. */
+  padding-bottom: calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
   display: grid;
   gap: var(--sp-4);
   overflow-y: auto;
   min-height: 0;
+  /* Gulir bersambut (momentum scroll) di Safari iOS; tanpa ini gulirnya
+     terasa macet-macet dan gampang disalahartikan warga sebagai "tidak bisa
+     digulir sama sekali". */
+  -webkit-overflow-scrolling: touch;
+  /* Mencegah gulir badan modal "bocor" ke halaman di baliknya saat mencapai
+     ujung — gerbang harus terasa sebagai area tertutup sendiri. */
+  overscroll-behavior: contain;
 }
 
 .modal__foot {
@@ -551,7 +574,19 @@
 
 /* --- Gerbang aturan + login --------------------------------------------- */
 
-.modal--gate { max-width: min(620px, calc(100vw - 2 * var(--gutter))); }
+.modal--gate {
+  max-width: min(620px, calc(100vw - 2 * var(--gutter)));
+  /* Gerbang ini SENGAJA tidak punya <form> pembungkus (lihat komentar di
+     index.html) — tapi tata letak "hanya badan yang menggulir" di atas
+     ditulis untuk `.modal > form`, bukan `.modal` sendiri. Tanpa baris ini,
+     `.modal__head`/`.modal__body` gerbang cuma menumpuk sebagai blok biasa
+     tanpa pembatas tinggi apa pun, isinya melebihi `max-height` milik
+     `.modal`, dan overflow-nya diam-diam TERPOTONG oleh `overflow: hidden`
+     — bukan digulir. Itulah sebabnya tombol login Google bisa hilang total
+     di layar HP tanpa ada bilah gulir sama sekali. */
+  display: flex;
+  flex-direction: column;
+}
 
 /* Tidak ada `.modal__foot` di gerbang — ketiadaan tombol "Batal"/"Tutup" itu
    disengaja, karena tidak ada jalan keluar selain menyetujui dan masuk. */
@@ -563,6 +598,32 @@
   display: grid;
   gap: var(--sp-3);
   justify-items: start;
+}
+
+/* Isyarat gulir di gerbang: pita sempit menempel di dasar dialog, DI LUAR
+   `.modal__body` yang menggulir — supaya isyarat ini sendiri tidak ikut
+   tergulir dan hilang dari pandangan tepat saat paling dibutuhkan. app.js
+   yang mengatur kapan `is-visible` terpasang (ada sisa gulir ke bawah) atau
+   dilepas (sudah mentok/tidak overflow), CSS di sini hanya urusan tampilan. */
+.modal__scroll-cue {
+  flex: none;
+  text-align: center;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  padding: var(--sp-2) var(--sp-5);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  pointer-events: none;
+}
+
+.modal__scroll-cue.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .gate__step {
