@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=5';
-import { api, ApiError, setTokenGetter } from './api.js?v=5';
-import * as auth from './auth.js?v=5';
+import { CONFIG } from './config.js?v=6';
+import { api, ApiError, setTokenGetter } from './api.js?v=6';
+import * as auth from './auth.js?v=6';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,7 +27,7 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=5';
+} from './ui.js?v=6';
 
 setTokenGetter(auth.getToken);
 

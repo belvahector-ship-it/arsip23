@@ -6,6 +6,13 @@
 <title>Arsip23 — Arsip Penyimpanan File Gratis Warga</title>
 <meta name="description" content="Arsip dokumentasi kegiatan warga: unggah sendiri, tertata rapi, bisa dilihat siapa saja.">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#0000FF">
+
+<!-- Ikon tab/jendela peramban: kotak biru "23", turunan dari .app-logo__mark
+     di header (lihat assets/favicon.svg untuk alasan kenapa hanya "23", bukan
+     "ARSIP23" penuh). SVG cukup untuk peramban modern; tidak ada fallback ICO
+     karena situs ini tidak menyasar peramban lawas. -->
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
 <link rel="preload" href="assets/font/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/font/manrope-latin-var.woff2" as="font" type="font/woff2" crossorigin>
@@ -22,9 +29,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=5">
-<link rel="stylesheet" href="assets/css/base.css?v=5">
-<link rel="stylesheet" href="assets/css/app.css?v=5">
+<link rel="stylesheet" href="assets/css/tokens.css?v=6">
+<link rel="stylesheet" href="assets/css/base.css?v=6">
+<link rel="stylesheet" href="assets/css/app.css?v=6">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -73,12 +80,24 @@
 </main>
 
 <footer class="app-footer">
-  <div class="app-footer__inner">
-    <p>
-      Arsip23 — Penyimpanan File Gratis.
-      Berkas tersimpan di Google Drive pengelola.
-    </p>
-    <p><a href="https://kasmenoreh.my.id" rel="noopener">← Kembali ke kasmenoreh.my.id</a></p>
+  <div class="app-footer__grid">
+    <div>
+      <p class="app-footer__title">Arsip23</p>
+      <p class="app-footer__text">
+        Arsip dokumentasi &amp; penyimpanan file gratis untuk warga
+        RT 01 / RW 04 Sampangan — unggah mandiri, tersimpan rapi di
+        Google Drive pengelola.
+      </p>
+    </div>
+    <div>
+      <p class="app-footer__title">Tautan</p>
+      <a class="app-footer__link" href="#/">Beranda Arsip</a>
+      <a class="app-footer__link" href="https://kasmenoreh.my.id" rel="noopener">Portal Kas — kasmenoreh.my.id</a>
+    </div>
+  </div>
+  <div class="app-footer__bottom">
+    <span>&copy; 2026 RT 01 / RW 04 Sampangan</span>
+    <span>Dibuat &amp; dikembangkan oleh <a href="http://ibstudio.my.id/" rel="noopener">ibstudio.my.id</a></span>
   </div>
 </footer>
 
@@ -215,6 +234,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=5"></script>
+<script type="module" src="assets/js/app.js?v=6"></script>
 </body>
 </html>

@@ -718,25 +718,89 @@
    Footer
    -------------------------------------------------------------------------- */
 
+/* Footer navy #02122A adalah PENYIMPANGAN sengaja dari tokens.css, bukan lupa
+   memakai token. tokens.css eksplisit menolak navy untuk footer (lihat
+   komentarnya sendiri: "Navy bukan bagian dari palet BRUTAL") — keputusan itu
+   berlaku untuk kasmenoreh.my.id, situs induk yang tokens.css disalin darinya
+   apa adanya (CP-03) dan TIDAK BOLEH diedit tangan supaya tidak menyimpang
+   dari sumbernya. Footer gelap ini murni identitas Arsip23 sendiri, jadi
+   nilainya didefinisikan lokal di sini, satu tempat, bukan tersebar sebagai
+   hex mentah di banyak baris — dan tetap dinamai seperti token supaya jelas
+   ini sengaja, bukan kecelakaan.
+
+   Warna teks di atasnya BUKAN --ink/--ink-2 biasa (keduanya nyaris hitam,
+   tak terlihat di atas navy). --footer-ink-2 dipatok terang tapi tetap
+   diredam dari putih murni, supaya judul "Arsip23" tetap yang paling menonjol
+   di antara body text — hierarki yang sama seperti --ink vs --ink-2 di tema
+   terang, dibalik untuk latar gelap. */
 .app-footer {
+  --footer-navy:  #02122A;
+  --footer-ink:   var(--paper);
+  --footer-ink-2: #AEB9CC;
+
   border-top: var(--bw-3) solid var(--ink);
-  padding: var(--sp-6) var(--gutter);
-  background: var(--footer-bg);
+  padding: var(--sp-7) var(--gutter) var(--sp-5);
+  background: var(--footer-navy);
+  color: var(--footer-ink-2);
 }
 
-.app-footer__inner {
+.app-footer__grid {
   max-width: var(--container);
   margin-inline: auto;
-  display: flex;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  font-size: var(--fs-sm);
-  color: var(--ink-2);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--sp-6);
+  padding-bottom: var(--sp-6);
+  border-bottom: var(--bw-1) solid var(--footer-ink-2);
 }
 
-.app-footer a { font-weight: 700; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 720px) {
+  .app-footer__grid { grid-template-columns: 1fr; gap: var(--sp-5); }
+}
+
+.app-footer__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--footer-ink);
+  margin-bottom: var(--sp-3);
+}
+
+.app-footer__text {
+  font-size: var(--fs-sm);
+  max-width: var(--measure);
+}
+
+.app-footer__link {
+  display: block;
+  font-size: var(--fs-sm);
+  padding-block: var(--sp-1);
+}
+
+.app-footer__bottom {
+  max-width: var(--container);
+  margin-inline: auto;
+  padding-top: var(--sp-5);
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: space-between;
+  font-size: var(--fs-xs);
+}
+
+/* Tautan footer BUKAN --accent (biru itu dikalibrasi untuk latar putih —
+   8.59:1 — dan jatuh ke sekitar 3:1 di atas navy, gagal WCAG AA untuk teks
+   kecil). Putih polos dipakai supaya kontrasnya tetap aman tanpa menambah
+   warna baru yang tidak ada di palet BRUTAL. */
+.app-footer a {
+  font-weight: 700;
+  color: var(--footer-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.app-footer a:hover { color: var(--footer-ink-2); }
 
 /* Tombol Google Identity Services disuntik sebagai iframe oleh Google, jadi
    isinya tidak bisa kita gaya. Yang bisa dilakukan hanya membingkainya supaya

@@ -1,0 +1,26 @@
+<!-- Favicon Arsip23 — kotak biru brutalis dengan "23", turunan langsung dari
+     .app-logo__mark di header (biru --brutal-blue #0000FF + teks putih).
+     Sengaja HANYA "23", bukan "ARSIP23" utuh: pada ukuran tab peramban
+     (16-32px), "ARSIP23" akan jadi coretan yang tidak terbaca — favicon harus
+     tetap jelas sebagai kotak solid dari jarak sekilas, bukan dibaca huruf
+     demi huruf. "23" tetap membawa identitas yang sama karena --brutal-blue
+     ini persis warna kotak "ARSIP" di header situs.
+
+     Font sengaja bukan Archivo (dimuat lewat @font-face di tokens.css):
+     favicon dirender peramban di luar konteks halaman, tanpa jaminan font
+     kustom ikut termuat — sans-serif bold bawaan sistem yang dipakai di sini
+     supaya "23" selalu tampil tebal dan jelas, bukan kadang jatuh ke font
+     tipis kalau Archivo gagal dimuat. -->
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="#0000FF"/>
+  <text
+    x="16" y="17"
+    font-family="Arial, Helvetica, sans-serif"
+    font-weight="800"
+    font-size="16"
+    letter-spacing="-0.5"
+    fill="#FFFFFF"
+    text-anchor="middle"
+    dominant-baseline="middle"
+  >23</text>
+</svg>
