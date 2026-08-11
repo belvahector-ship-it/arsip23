@@ -847,49 +847,72 @@ isian cerah (teks `--ink` di atasnya) dan varian `-ink` gelap untuk teks kecil.
 Konsekuensi yang terlihat: tombol hapus dan toast memakai teks gelap, bukan
 teks putih seperti tema BRUTAL.
 
-**Font BELUM persis.** Situs induk memakai tiga font — Space Grotesk (judul),
-Plus Jakarta Sans (teks), JetBrains Mono (angka). Ketiganya belum ada sebagai
-woff2 lokal di repo ini; yang ada Archivo + Manrope. Tiap tumpukan `--font-*`
-sudah menyebut font aslinya lebih dulu, jadi menambahkan ketiga woff2 itu
-nanti akan langsung menyamakan tipografi tanpa menyentuh berkas lain. Sementara
-ini angka jatuh ke **monospace bawaan sistem** — bukan ke Manrope — karena
-lebar digit seragam adalah ciri paling khas tema ini dan paling terasa kalau
-hilang. Font tidak boleh dimuat dari CDN Google (halaman harus tetap benar saat
-offline).
+**Font kini persis.** Ketiganya diunduh sebagai woff2 **lokal** subset latin —
+Space Grotesk (judul), Plus Jakarta Sans (teks), JetBrains Mono (angka), total
+90 KB. Bukan dari CDN Google: lewat CDN, tipografi seluruh situs bergantung
+pada permintaan jaringan yang di jaringan RT sering gagal, dan gejalanya bukan
+"sedang offline" melainkan judul dan angka yang mendadak berganti font sistem.
 
-**Utang lain yang disengaja (kalau tema ini jadi dipakai):**
+Dua detail yang gampang dirusak nanti:
 
-- `assets/favicon.svg` masih kotak **biru** `#0000FF` dari tema BRUTAL,
-  sementara `.app-logo__mark` kini gelap. Perlu edit `favicon.svg` lalu
-  `node scripts/gen-icons.js` — butuh dependensi `sharp`, di luar lingkup
-  "pengujian lokal".
+- **Rentang bobot @font-face adalah batas ASLI tiap font** (300–700, 200–800,
+  100–800), jangan "dirapikan" jadi `100 900`. Tema ini meminta 900 di beberapa
+  tempat; peramban lalu MENSINTESIS bobot itu, dan situs induk pun begitu.
+  Rentang yang lebih lebar daripada isi berkasnya justru mematikan sintesis,
+  dan judul 900 diam-diam tergambar lebih tipis daripada di situs induk.
+- **Archivo + Manrope dilepas dari deklarasi**, meski awalnya dipasang sebagai
+  lapisan cadangan. `performance.getEntriesByType` menunjukkan keduanya tetap
+  diminta tiap muat halaman — 60 KB untuk font yang `document.fonts` laporkan
+  berstatus `unloaded`. Berkasnya dibiarkan di `assets/font/` karena salinan
+  tokens.css di situs induk masih memakainya. Kalau nanti ada yang
+  mengembalikan salah satunya ke tumpukan `--font-*`, @font-face-nya wajib
+  ditambahkan lagi — tanpa itu namanya diabaikan diam-diam.
+
+**Ikon sudah ikut diperbarui.** `favicon.svg` kini kotak gelap membulat dengan
+"23" krem, dan seluruh PNG + ICO diturunkan ulang lewat `node scripts/gen-icons.js`
+(`sharp` dipasang sementara dengan `--no-save`, lalu `node_modules` dihapus —
+tidak ada dependensi baru yang masuk repo). `site.webmanifest` ikut disesuaikan.
+Bayangan keras SENGAJA tidak ikut ke favicon: pada 16px, offset 2px adalah 12%
+lebar ikon, dan yang tergambar bukan kesan melayang melainkan kotak yang
+terlihat salah cetak.
+
+**Utang yang tersisa:**
+
 - **`tokens.css` dan `base.css` kini MENYIMPANG dari salinan di situs induk.**
   CP-03 menetapkan keduanya disalin apa adanya dan tidak diedit tangan di sini.
   Aturan itu dilanggar sadar. **Menyalin ulang tokens.css dari sana akan
   mengembalikan tema BRUTAL diam-diam.** Peringatan ini juga ada di kepala
   `tokens.css` sendiri.
 
-**Ditambahkan untuk pengujian, aman dihapus:** `preview-desain.html` (halaman
-statis berisi semua komponen — perlu karena halaman asli menahan seluruh isinya
-di balik gerbang login, sehingga kartu/toolbar/keadaan kosong/antrian unggah
-tidak akan pernah terlihat tanpa akun Google; halaman ini tidak memuat satu pun
-berkas dari luar, jadi bisa dinilai tanpa internet) dan `.claude/launch.json`
-(server statis lokal port 5173).
+**Perkakas pengujian TIDAK diterbitkan.** `preview-desain.html` (halaman statis
+berisi semua komponen dengan data palsu — perlu karena halaman asli menahan
+seluruh isinya di balik gerbang login, sehingga kartu/toolbar/keadaan
+kosong/antrian unggah tidak akan pernah terlihat tanpa akun Google; tidak
+memuat satu pun berkas dari luar, jadi bisa dinilai tanpa internet) dan
+`.claude/launch.json` keduanya masuk `.gitignore`. Kalau ikut terbit,
+`preview-desain.html` akan publik di `arsip-gratis.my.id/preview-desain.html`
+dan memperlihatkan "3 folder · 4 berkas" palsu seolah itu isi arsip sungguhan.
+Berkasnya tetap ada di cakram untuk dipakai lagi kapan pun.
 
 **Diuji lokal:** tidak ada galat konsol; tidak ada gulir horizontal di 375px
 maupun 1280px; gerbang login tetap terkunci, tetap menggulir di dalam badannya,
 isyarat gulirnya tetap muncul saat di atas dan hilang saat mentok, dan tombol
 login tetap terjangkau; ketiga tebal border terbedakan pada DPR 1.25; seluruh
-bayangan terverifikasi blur-nol. **Belum diuji:** alur login Google sungguhan
-dan render kartu dari data Drive asli (butuh Worker + akun).
+bayangan terverifikasi blur-nol; ketiga font terbukti benar-benar TERPAKAI
+(diukur lewat `document.fonts.check` + perbandingan lebar teks, bukan sekadar
+"tidak ada galat"), dan hanya tiga woff2 yang diminta. **Belum diuji:** alur
+login Google sungguhan dan render kartu dari data Drive asli (butuh Worker +
+akun) — keduanya butuh jaringan dan akun pengelola.
 
 **Affects:** `assets/css/tokens.css`, `assets/css/base.css`, `assets/css/app.css`,
-`index.html` (`theme-color`, penanda versi `?v=12`), `404.html`, penanda versi
-di `assets/js/*.js`.
+`index.html` (`theme-color`, preload font, penanda versi `?v=14`), `404.html`,
+penanda versi di `assets/js/*.js`, `assets/favicon.svg` + `assets/favicon.ico` +
+`assets/icons/*`, `assets/site.webmanifest`, tiga woff2 baru di `assets/font/`,
+`.gitignore`.
 
 **Reversible:** ya, sepenuhnya — `git checkout main`. `main` tidak diubah, dan
 kondisinya sebelum perubahan ini dipatok permanen oleh tag `desain-brutal`.
 
-**Status:** proposed · diuji lokal · **belum diterbitkan, menunggu keputusan user**
+**Status:** confirmed · disetujui user setelah pratinjau · **diterbitkan ke `main`**
 
 ---

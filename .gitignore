@@ -21,3 +21,13 @@ desktop.ini
 .DS_Store
 .vscode/
 .idea/
+
+# Perkakas pengujian desain lokal — SENGAJA tidak diterbitkan.
+#
+# preview-desain.html memuat seluruh komponen dengan data palsu supaya tema
+# bisa dinilai tanpa login Google. Kalau ia ikut ke `main`, ia ikut terbit ke
+# arsip-gratis.my.id/preview-desain.html: publik, terindeks mesin pencari, dan
+# memperlihatkan "3 folder · 4 berkas" palsu sebagai kalau itu isi arsip
+# sungguhan. Berkasnya tetap ada di cakram untuk dipakai lagi kapan pun.
+preview-desain.html
+.claude/launch.json
