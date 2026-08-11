@@ -13,9 +13,9 @@
    yang benar-benar ada di sana.
    ========================================================================== */
 
-import { CONFIG } from './config.js?v=4';
-import { api, ApiError, setTokenGetter } from './api.js?v=4';
-import * as auth from './auth.js?v=4';
+import { CONFIG } from './config.js?v=5';
+import { api, ApiError, setTokenGetter } from './api.js?v=5';
+import * as auth from './auth.js?v=5';
 import {
   renderCrumbs,
   renderSkeleton,
@@ -27,7 +27,7 @@ import {
   uploadItem,
   openModal,
   formatSize,
-} from './ui.js?v=4';
+} from './ui.js?v=5';
 
 setTokenGetter(auth.getToken);
 
@@ -294,6 +294,17 @@ function sealDialog(dialog) {
   dialog.addEventListener('cancel', (e) => e.preventDefault());
 }
 sealDialog(dom.modalGate);
+
+/* Lapisan ketiga: apa pun yang berhasil menutup gerbang — jalur peramban yang
+   tak terduga, ekstensi, atau kode kita sendiri yang keliru — akan langsung
+   dibuka kembali selama user belum masuk. Satu-satunya penutupan yang sah
+   terjadi di `onGatePassed()`, yang saat itu sudah memasang user-nya. */
+dom.modalGate.addEventListener('close', () => {
+  if (!auth.getUser()) {
+    console.warn('[arsip23] gerbang tertutup tanpa login — dibuka kembali.');
+    openGate();
+  }
+});
 
 function syncGateStep() {
   const checked = dom.gateCheck.checked;

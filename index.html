@@ -22,9 +22,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=4">
-<link rel="stylesheet" href="assets/css/base.css?v=4">
-<link rel="stylesheet" href="assets/css/app.css?v=4">
+<link rel="stylesheet" href="assets/css/tokens.css?v=5">
+<link rel="stylesheet" href="assets/css/base.css?v=5">
+<link rel="stylesheet" href="assets/css/app.css?v=5">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -92,7 +92,11 @@
 
      Tidak memakai <form method="dialog"> seperti modal lain, justru supaya
      tidak ada satu pun kontrol bawaan yang bisa menutupnya secara tak sengaja. -->
-<dialog class="modal modal--gate" id="modal-gate" aria-labelledby="gate-title">
+<!-- `closedby="none"` menutup jalur keluar di tingkat platform: Esc dan klik-luar
+     tidak lagi bisa menutup dialog ini, tanpa bergantung pada JavaScript. Di
+     peramban lama atribut ini diabaikan — karena itu `sealDialog()` dan penjaga
+     `close` di app.js tetap ada sebagai lapisan kedua dan ketiga. -->
+<dialog class="modal modal--gate" id="modal-gate" closedby="none" aria-labelledby="gate-title">
   <div class="modal__head modal__head--danger" id="gate-title">
     Aturan &amp; Persetujuan
   </div>
@@ -211,6 +215,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=4"></script>
+<script type="module" src="assets/js/app.js?v=5"></script>
 </body>
 </html>
