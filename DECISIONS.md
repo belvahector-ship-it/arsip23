@@ -574,3 +574,76 @@ supaya folder root warga tidak menampilkan tombol hapus yang server jamin tolak.
 **Status:** confirmed (sudah diperbaiki & ter-deploy)
 
 ---
+
+## CP-21 · QA · 2026-08-11 — Sesi disimpan di sessionStorage (membatalkan keputusan "memori saja")
+
+**Dilaporkan user:** "setiap refresh ganti akun email (karena saya ada beberapa
+akun)".
+
+**Keputusan:** Menggantikan keputusan lama di `assets/js/auth.js` yang menyimpan
+ID token **hanya di memori**. Token kini disimpan di **sessionStorage**, dan saat
+halaman dimuat ulang, `/api/login` dipanggil untuk memvalidasinya ke server
+sekaligus mengambil ulang profil.
+
+**Kenapa keputusan lama salah:** alasannya dulu keamanan — token yang tidak
+pernah ditulis ke penyimpanan tidak bisa dibaca skrip lain — dan harganya
+diperkirakan kecil: "user tinggal masuk lagi setelah refresh". Perkiraan itu
+meleset karena mengabaikan kenyataan bahwa satu peramban sering punya beberapa
+akun Google. Yang terjadi bukan "masuk lagi", melainkan **masuk sebagai orang
+lain**: tombol Google memakai akun aktif peramban, bukan akun sebelumnya. Di
+aplikasi yang seluruh hak ubahnya ditentukan identitas, itu berarti ruang
+kerjanya ikut berganti — folder yang tadi ada mendadak bukan miliknya.
+
+sessionStorage, bukan localStorage: mati saat tab ditutup dan tidak dibagi antar
+tab, jadi sesi tidak menggantung di komputer bersama.
+
+---
+
+## CP-22 · QA · 2026-08-11 — Pembaruan situs tertahan cache GitHub Pages
+
+**Ditemukan saat menguji CP-21:** perbaikan sudah ter-deploy dan terbukti ada di
+server, tapi halaman tetap menjalankan `auth.js` **lama** dari cache peramban.
+GitHub Pages mengirim `cache-control: max-age=600` dan header itu tidak bisa
+diatur.
+
+**Kenapa ini serius, bukan sekadar merepotkan saat menguji:** selama 10 menit
+setelah setiap `git push`, warga menjalankan **campuran** versi — `index.html`
+baru dengan `app.js` lama. Campuran itu tidak menghasilkan pesan galat apa pun;
+yang terjadi hanyalah fitur yang diam-diam tidak bekerja. Persis pola CP-20
+lagi, dari sebab yang sama sekali berbeda.
+
+**Perbaikan:** penanda `?v=N` di seluruh CSS/JS, termasuk pada setiap `import`
+antar-modul — karena `import './api.js'` di dalam `app.js` tidak ikut membawa
+penanda dari `index.html`, sehingga modul dalam tetap terambil dari cache kalau
+dilewatkan. Ada 10 titik, wajib dinaikkan bersamaan; caranya ditulis di README.
+
+---
+
+## CP-23 · QA · 2026-08-11 — Unggah .docx 100KB TIDAK bisa direproduksi
+
+**Dilaporkan user:** unggah .docx 100KB gagal dengan "koneksi gagal ke server",
+padahal internetnya jalan.
+
+**Hasil investigasi — tidak ditemukan cacat di jalur unggah:**
+
+| Uji | Hasil |
+|---|---|
+| Preflight `OPTIONS /api/upload` dengan Origin GitHub Pages | ✅ 204, header CORS lengkap |
+| `POST` .docx 100KB via curl dengan Origin browser | ✅ 201 |
+| `POST` .docx 100KB via `fetch` **dari dalam halaman live** | ✅ 201 |
+
+**Yang tetap dikerjakan, karena penanganan galatnya memang buruk:** pesan
+"Tidak bisa terhubung ke server. Cek koneksi Anda." dulu menampung SEMUA
+penolakan `fetch` dan menuduh koneksi user. Sekarang sebabnya dibedakan
+(terputus vs dibatalkan), alasan asli dari peramban dicatat ke konsol, dan
+unggahan **mencoba ulang sekali** khusus untuk kegagalan jaringan — galat lain
+tidak diulang, karena berkas kebesaran atau folder bukan milik sendiri akan
+gagal sama persis pada percobaan kedua.
+
+**Dugaan terkuat penyebab aslinya:** user sedang menjalankan JS lama dari cache
+(CP-22) saat mencoba. Tidak bisa dipastikan, dan sengaja **tidak** diklaim sudah
+beres — kalau terulang, konsol sekarang mencatat alasan aslinya.
+
+**Status:** tidak bisa direproduksi · penanganan galat diperbaiki
+
+---
