@@ -10,9 +10,18 @@
 
 <!-- Ikon tab/jendela peramban: kotak biru "23", turunan dari .app-logo__mark
      di header (lihat assets/favicon.svg untuk alasan kenapa hanya "23", bukan
-     "ARSIP23" penuh). SVG cukup untuk peramban modern; tidak ada fallback ICO
-     karena situs ini tidak menyasar peramban lawas. -->
+     "ARSIP23" penuh). SVG untuk peramban modern (tab bar), PNG bertingkat +
+     ICO untuk peramban/OS yang tidak mendukung SVG icon (favicon lawas,
+     shortcut Windows), apple-touch-icon untuk "Tambah ke Layar Utama" di iOS,
+     dan manifest untuk ikon PWA Android/desktop. Semua diturunkan otomatis
+     dari assets/favicon.svg lewat scripts/gen-icons.js. -->
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" href="assets/icons/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="icon" href="assets/icons/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/icons/favicon-48x48.png" sizes="48x48" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="assets/site.webmanifest">
 
 <link rel="preload" href="assets/font/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/font/manrope-latin-var.woff2" as="font" type="font/woff2" crossorigin>
