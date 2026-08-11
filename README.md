@@ -2,7 +2,7 @@
 
 Arsip dokumentasi berbasis web dengan tampilan file explorer. Setiap warga punya
 ruangnya sendiri; berkasnya benar-benar tersimpan di Google Drive pengelola.
-Bisa dilihat siapa saja, hanya bisa diubah pemiliknya.
+Bisa dilihat semua warga yang sudah masuk, hanya bisa diubah pemiliknya.
 
 Dipakai pertama kali oleh **kasmenoreh.my.id**, tapi dirancang bisa dipakai ulang
 untuk proyek lain lewat satu baris konfigurasi.
