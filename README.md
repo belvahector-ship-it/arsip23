@@ -41,6 +41,25 @@ arsip23/
 Frontend **tanpa build step dan tanpa dependency** — ES modules murni, sama
 seperti situs induknya. Tidak ada `npm install` untuk menjalankannya.
 
+### ⚠️ Naikkan `?v=` setiap kali mengubah CSS/JS
+
+GitHub Pages mengirim `cache-control: max-age=600` dan tidak bisa diatur. Tanpa
+penanda versi, selama 10 menit setelah setiap `git push`, warga tetap
+menjalankan kode lama — dan yang paling berbahaya bukan "lama", melainkan
+**campuran**: `index.html` baru dengan `app.js` lama. Gejalanya bukan pesan
+galat, melainkan fitur yang diam-diam tidak bekerja.
+
+Karena itu setiap berkas CSS/JS dipanggil dengan `?v=N`. Sebelum push, naikkan
+`N` **di semua tempat sekaligus**:
+
+```bash
+grep -rn "?v=" index.html assets/js/
+```
+
+Ada 10 titik: 3 CSS + 1 skrip di `index.html`, dan 6 `import` di `assets/js/`.
+Kalau satu tertinggal, modul itu tetap diambil dari cache dan campuran versi
+terulang lagi.
+
 ---
 
 ## Menjalankan secara lokal

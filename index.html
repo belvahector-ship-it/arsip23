@@ -9,9 +9,22 @@
 
 <link rel="preload" href="assets/font/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/font/manrope-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/tokens.css">
-<link rel="stylesheet" href="assets/css/base.css">
-<link rel="stylesheet" href="assets/css/app.css">
+<!-- ?v= adalah PENANDA VERSI, dan wajib dinaikkan setiap kali berkas CSS/JS
+     mana pun diubah.
+
+     GitHub Pages mengirim `cache-control: max-age=600` dan tidak bisa diatur.
+     Tanpa penanda ini, selama 10 menit setelah setiap pembaruan, warga tetap
+     menjalankan kode lama dari cache — dan yang lebih buruk daripada "lama"
+     adalah CAMPURAN: index.html baru dengan app.js lama. Gejalanya bukan pesan
+     galat, melainkan fitur yang diam-diam tidak bekerja, persis seperti yang
+     terjadi pada perbaikan tombol unggah.
+
+     Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
+     dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
+     cache dan campuran versi terulang lagi. -->
+<link rel="stylesheet" href="assets/css/tokens.css?v=3">
+<link rel="stylesheet" href="assets/css/base.css?v=3">
+<link rel="stylesheet" href="assets/css/app.css?v=3">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -152,6 +165,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js"></script>
+<script type="module" src="assets/js/app.js?v=3"></script>
 </body>
 </html>
