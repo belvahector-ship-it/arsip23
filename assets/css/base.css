@@ -112,9 +112,9 @@ strong, b { font-weight: 700; }
 
 /* Angka MONOSPACE, dan itu bukan sekadar demi kolom yang lurus — inilah salah
    satu dari empat hal yang membuat tema ini terbaca sebagai layar mesin alih-
-   alih laporan biasa (lihat kepala tokens.css). Situs induk memakai JetBrains
-   Mono bobot 900; di sini tumpukan --font-num jatuh ke monospace bawaan
-   sistem selama berkas woff2-nya belum ada.
+   alih laporan biasa (lihat kepala tokens.css). Tema ini TIDAK memuat font
+   monospace sendiri — --font-num menunjuk ke monospace bawaan sistem, yang
+   sudah memberi lebar digit seragam tanpa satu pun unduhan.
 
    Bobot 800, bukan 400: angka di tema ini SELALU tebal, termasuk di dalam
    tabel. Angka tipis di antara label bobot 700 terbaca sebagai teks sekunder,
@@ -139,8 +139,10 @@ strong, b { font-weight: 700; }
   letter-spacing: var(--ls-num);
 }
 
-/* Label kecil huruf besar — penanda bahasa BRUTAL di seluruh situs.
-   Manrope 700, uppercase, tracking 0.05em. */
+/* Label kecil huruf besar — penanda bahasa tema ini di seluruh situs:
+   uppercase, bobot 700, tracking LEBAR (kebalikan dari judul, yang justru
+   dirapatkan). Kontrasnya itu yang membuat label terbaca sebagai keterangan
+   dan judul sebagai judul, walaupun keduanya sama-sama huruf kapital. */
 .eyebrow {
   font-family: var(--font-text);
   font-size: var(--fs-xs);

@@ -27,14 +27,18 @@
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <link rel="manifest" href="assets/site.webmanifest">
 
-<!-- Preload HANYA tiga font yang benar-benar dipakai tema ini. Archivo dan
-     Manrope tetap dideklarasikan di tokens.css sebagai jaring pengaman, tapi
-     TIDAK di-preload: preload memaksa unduhan tanpa peduli dipakai atau tidak,
-     jadi mem-preload lima font berarti 60 KB yang tidak akan pernah tergambar
-     ikut mengantre di jalur render kritis — di jaringan RT itu terasa. -->
-<link rel="preload" href="assets/font/spacegrotesk-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/font/plusjakartasans-latin-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="assets/font/jetbrainsmono-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<!-- Preload HANYA dua font yang benar-benar dipakai. Tema ini sengaja tidak
+     memakai Space Grotesk/Plus Jakarta Sans/JetBrains Mono milik situs induk
+     (lihat kepala tokens.css); angka memakai monospace bawaan sistem, yang
+     tidak perlu diunduh sama sekali.
+
+     Preload memaksa unduhan tanpa peduli font itu akhirnya dipakai atau tidak,
+     jadi daftar ini harus PERSIS sama dengan @font-face di tokens.css. Satu
+     baris yang tertinggal di sini setelah font diganti = berkas yang diunduh
+     penuh lalu dibuang, mengantre di jalur render kritis — di jaringan RT itu
+     terasa, dan tidak ada galat apa pun yang menunjukkannya. -->
+<link rel="preload" href="assets/font/archivo-latin-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/font/manrope-latin-var.woff2" as="font" type="font/woff2" crossorigin>
 <!-- ?v= adalah PENANDA VERSI, dan wajib dinaikkan setiap kali berkas CSS/JS
      mana pun diubah.
 
@@ -48,9 +52,9 @@
      Nilainya harus SAMA di semua tempat: berkas ini dan seluruh `import` di
      dalam assets/js/. Kalau salah satu tertinggal, modul itu tetap diambil dari
      cache dan campuran versi terulang lagi. -->
-<link rel="stylesheet" href="assets/css/tokens.css?v=14">
-<link rel="stylesheet" href="assets/css/base.css?v=14">
-<link rel="stylesheet" href="assets/css/app.css?v=14">
+<link rel="stylesheet" href="assets/css/tokens.css?v=15">
+<link rel="stylesheet" href="assets/css/base.css?v=15">
+<link rel="stylesheet" href="assets/css/app.css?v=15">
 
 <!-- Google Identity Services. Dimuat `defer` supaya kegagalannya (jaringan RT
      yang putus-putus) tidak menahan render halaman: menelusuri arsip tidak
@@ -270,6 +274,6 @@
   </form>
 </dialog>
 
-<script type="module" src="assets/js/app.js?v=14"></script>
+<script type="module" src="assets/js/app.js?v=15"></script>
 </body>
 </html>

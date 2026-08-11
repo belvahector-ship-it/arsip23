@@ -916,3 +916,64 @@ kondisinya sebelum perubahan ini dipatok permanen oleh tag `desain-brutal`.
 **Status:** confirmed · disetujui user setelah pratinjau · **diterbitkan ke `main`**
 
 ---
+
+## CP-28 · Build · 2026-08-11 — Tiga font asli DILEPAS; tema Neo Console jalan tanpa menambah berkas font
+
+**Diminta user:** "terapkan tanpa font".
+
+**Keputusan:** ketiga woff2 yang dipasang di CP-27 (Space Grotesk, Plus Jakarta
+Sans, JetBrains Mono — 90 KB) dihapus dari repo. Tema Neo Console tetap utuh;
+tipografinya kembali ke font yang sudah ada:
+
+| Peran | CP-27 (situs induk) | Sekarang |
+| --- | --- | --- |
+| Judul & logo | Space Grotesk | Archivo (lokal, sudah ada) |
+| Teks isi | Plus Jakarta Sans | Manrope (lokal, sudah ada) |
+| Angka & kode ekstensi | JetBrains Mono | **monospace bawaan sistem** |
+
+**Angka TIDAK dijatuhkan ke Manrope, dan itu bagian terpenting entri ini.**
+Lebar digit yang seragam adalah satu dari empat hal yang membuat tema ini
+terbaca sebagai layar mesin alih-alih laporan (lihat kepala `tokens.css`).
+`--font-num` menunjuk ke `ui-monospace, 'Cascadia Mono', 'Segoe UI Mono',
+Consolas, 'SF Mono', monospace` — Windows, macOS, dan Linux semuanya sudah
+punya salah satunya, jadi cirinya tetap didapat dengan nol unduhan. Kalau nanti
+ada yang "merapikan" ini jadi satu font teks saja, ciri paling khas temanya
+hilang.
+
+**Konsekuensi yang jujur:** tipografi TIDAK identik dengan situs induk. Judul
+Archivo kehilangan karakter display Space Grotesk pada bobot tinggi, dan angka
+monospace sistem tidak punya bobot 900 sehingga tergambar lebih tipis (ditahan
+oleh `font-weight: 800` di `.num`, yang memicu sintesis penebalan peramban).
+Yang TETAP identik adalah semua hal lain yang membawa identitas tema: bayangan
+keras blur-nol, kontur `--ink`, sudut membulat, palet, dan gerak tekan.
+
+**Satu cacat senyap yang ikut ditutup.** `<link rel="preload">` di `index.html`
+masih menunjuk ketiga font lama. Preload memaksa unduhan tanpa peduli font itu
+akhirnya dipakai atau tidak — kalau baris itu tertinggal, 90 KB tetap diunduh
+penuh lalu dibuang, mengantre di jalur render kritis, **tanpa satu pun galat
+yang menunjukkannya**. Daftar preload sekarang wajib persis sama dengan
+`@font-face` di `tokens.css`; keduanya diverifikasi lewat
+`performance.getEntriesByType('resource')` — tepat dua woff2 diminta, nol 404.
+
+**Yang TIDAK dilepas:** ikon (`favicon.svg` + turunannya) tetap versi Neo
+Console dari CP-27 — ia soal warna dan bentuk, bukan font.
+
+**Diuji lokal:** tepat dua woff2 diminta (Archivo + Manrope), keduanya
+`loaded`, nol 404, nol permintaan sisa ke tiga font lama; tidak ada galat
+konsol; tidak ada gulir horizontal; bayangan keras masih utuh di kartu (5px),
+header (`0 4px 0`), dan tombol (2px); gerbang login tetap terkunci, tetap
+menggulir di dalam badannya, isyarat gulir muncul saat di atas dan hilang saat
+mentok, tombol login tetap terjangkau.
+
+**Affects:** `assets/css/tokens.css` (blok `@font-face` + `--font-*`),
+`assets/css/base.css` (komentar `.num`), `index.html` (preload + `?v=15`),
+`404.html`, `preview-desain.html`, penanda versi di `assets/js/*.js`.
+Dihapus: `assets/font/{spacegrotesk,plusjakartasans,jetbrainsmono}-latin-var.woff2`.
+
+**Reversible:** ya — ketiga woff2 masih ada di riwayat pada commit CP-27
+(`a348ccd`), jadi mengembalikannya cukup `git checkout a348ccd -- assets/font/`
+lalu memulihkan blok `@font-face` dan `--font-*`.
+
+**Status:** confirmed · diuji lokal · **belum di-push saat entri ini ditulis**
+
+---

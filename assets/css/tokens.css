@@ -39,87 +39,75 @@
    ========================================================================== */
 
 /* ==========================================================================
-   FONT — TIGA KELUARGA, DIMUAT LOKAL
+   FONT — DUA KELUARGA LOKAL, TANPA MENAMBAH BERKAS BARU
 
-   Pembagiannya bukan hiasan; masing-masing mengerjakan satu hal:
+   Situs induk memakai tiga font: Space Grotesk (judul), Plus Jakarta Sans
+   (teks), JetBrains Mono (angka). Ketiganya SENGAJA TIDAK dipakai di sini.
+   Tema ini dijalankan dengan font yang sudah ada di repo — Archivo untuk
+   judul, Manrope untuk teks — plus monospace bawaan sistem untuk angka.
+   Nol berkas baru, nol byte tambahan di jalur render.
 
-     Space Grotesk     → judul, logo, tombol (uppercase, tracking negatif)
-     Plus Jakarta Sans → teks isi
-     JetBrains Mono    → SEMUA angka + kode ekstensi berkas
+   Konsekuensinya jujur: tipografinya TIDAK identik dengan situs induk. Yang
+   tetap terjaga adalah semua hal lain yang membawa identitas tema — bayangan
+   keras, kontur --ink, sudut membulat, palet, dan gerak tekan. Font adalah
+   satu-satunya lapisan yang meleset, dan itu keputusan sadar.
 
-   Yang ketiga itu yang paling menentukan. Digit selebar sama dengan bobot
-   tebal adalah alasan halaman ini terbaca sebagai layar mesin alih-alih
-   laporan — kalau angka jatuh ke font teks biasa, ciri paling khas tema ini
-   hilang, jauh lebih terasa daripada judul yang fontnya meleset sedikit.
+   Kenapa Archivo bisa menggantikan Space Grotesk tanpa terasa rusak: keduanya
+   grotesque dengan x-height besar dan apertur terbuka. Yang berbeda hanya
+   karakter display Space Grotesk pada bobot tinggi. Judul di tema ini toh
+   sudah dibawa oleh UPPERCASE + bobot 900 + tracking negatif, bukan oleh
+   bentuk hurufnya.
 
-   TIDAK DIMUAT DARI fonts.googleapis.com, dan itu keputusan yang sudah pernah
-   diambil dan tidak boleh dibalik diam-diam. Lewat CDN, tipografi seluruh
-   situs bergantung pada permintaan jaringan yang di jaringan RT sering gagal —
-   dan gejalanya bukan "sedang offline", melainkan judul dan angka rupiah yang
-   mendadak berganti font sistem: situsnya terlihat rusak justru saat ia
-   sebenarnya bekerja persis seperti seharusnya.
+   ANGKA JATUH KE MONOSPACE SISTEM, BUKAN KE MANROPE — dan ini bagian yang
+   tidak boleh "dirapikan" jadi satu font saja. Digit selebar sama adalah
+   alasan halaman ini terbaca sebagai layar mesin alih-alih laporan; itu ciri
+   tema yang paling khas dan paling terasa hilang. Cascadia Mono/Consolas di
+   Windows, SF Mono di macOS, dan `ui-monospace` di mana pun tersedia sudah
+   memberikannya secara gratis, tanpa satu pun unduhan.
 
-   Ketiganya font VARIABEL, subset LATIN saja, total ~90 KB — lebih kecil
-   daripada kumpulan berkas statis yang akan diunduh CDN untuk bobot yang sama,
-   dan menghapus satu perjalanan pulang-pergi ke CDN dari jalur render kritis.
-   Seluruh isi situs berbahasa Indonesia dan tidak memakai satu pun karakter
-   di luar rentang latin.
+   Bedanya dengan JetBrains Mono: monospace sistem tidak punya bobot 900, jadi
+   angka akan tergambar lebih tipis daripada di situs induk. `font-weight: 800`
+   di `.num` (base.css) yang menahannya — peramban mensintesis penebalan dari
+   bobot tertinggi yang ada.
 
-   Archivo dan Manrope (tema BRUTAL) SENGAJA TIDAK LAGI dideklarasikan di sini,
-   walaupun berkasnya masih ada di assets/font/ dan sempat dipasang sebagai
-   lapisan cadangan di tumpukan --font-*. Alasannya terukur, bukan estetis:
-   dengan keduanya ikut dideklarasikan, `performance.getEntriesByType` mencatat
-   kelimanya diminta pada tiap muat halaman — 60 KB tambahan untuk dua font
-   yang `document.fonts` sendiri melaporkan berstatus `unloaded`, alias tidak
-   pernah dipakai menggambar satu huruf pun.
+   TIDAK BOLEH DIMUAT DARI fonts.googleapis.com kalau nanti ada yang menambah
+   font. Lewat CDN, tipografi seluruh situs bergantung pada permintaan jaringan
+   yang di jaringan RT sering gagal — dan gejalanya bukan "sedang offline",
+   melainkan judul dan angka rupiah yang mendadak berganti font sistem:
+   situsnya terlihat rusak justru saat ia bekerja persis seperti seharusnya.
+   Kalau ketiga font asli itu suatu saat ditambahkan, tambahkan sebagai woff2
+   LOKAL di assets/font/, deklarasikan @font-face-nya di sini, dan sebutkan
+   namanya paling depan di tumpukan --font-* di bawah.
 
-   Nilai cadangannya juga lebih kecil daripada kelihatannya. Kalau salah satu
-   woff2 gagal termuat, jatuh ke Archivo tidak lebih baik daripada jatuh ke
-   sans-serif bawaan sistem — keduanya sama-sama bukan font yang dimaksud, dan
-   yang kedua gratis. Berkasnya dibiarkan di assets/font/ karena salinan
-   tokens.css di situs induk masih memakainya.
+   Keduanya font VARIABEL, subset LATIN saja, total 58 KB. Seluruh isi situs
+   berbahasa Indonesia dan tidak memakai satu pun karakter di luar rentang itu.
 
-   Konsekuensinya: kalau nanti ada yang MENGEMBALIKAN salah satu font lama ke
-   tumpukan --font-*, ia wajib menambahkan @font-face-nya kembali di sini —
-   tanpa itu namanya diabaikan diam-diam dan langsung jatuh ke lapisan
-   berikutnya, tanpa galat apa pun.
-
-   RENTANG BOBOT DI BAWAH ADALAH BATAS ASLI TIAP FONT, jangan "dirapikan" jadi
-   `100 900`. Space Grotesk berhenti di 700 dan JetBrains Mono di 800, padahal
-   tema ini meminta 900 di beberapa tempat — peramban lalu MENSINTESIS bobot
-   itu dengan menebalkan garis, dan situs induk pun menampilkannya begitu.
+   RENTANG BOBOT DI BAWAH ADALAH BATAS ASLI TIAP BERKAS, jangan diperlebar jadi
+   `100 900`. Archivo berhenti di 800 padahal tema ini meminta 900 di beberapa
+   tempat — peramban lalu MENSINTESIS bobot itu dengan menebalkan garis.
    Menuliskan rentang yang lebih lebar daripada yang benar-benar ada di berkas
-   justru mematikan sintesis itu, dan judul 900 diam-diam tergambar lebih tipis
-   daripada di situs induk.
+   justru MEMATIKAN sintesis itu, dan judul 900 diam-diam tergambar setipis 800.
 
-   Rujukan keputusan: DECISIONS.md CP-27.
+   Rujukan keputusan: DECISIONS.md CP-28 (font dilepas dari CP-27).
    ========================================================================== */
 
 @font-face {
-  font-family: 'Space Grotesk';
+  font-family: 'Archivo';
   font-style: normal;
   /* Rentang, bukan satu angka — inilah cara font variabel dideklarasikan.
      Menuliskannya sebagai `font-weight: 700` membuat peramban mensintesis
      bobot lain dengan menebalkan garis secara kasar. */
-  font-weight: 300 700;
+  font-weight: 600 800;
   font-display: swap;
-  src: url('../font/spacegrotesk-latin-var.woff2') format('woff2');
+  src: url('../font/archivo-latin-var.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'Plus Jakarta Sans';
+  font-family: 'Manrope';
   font-style: normal;
-  font-weight: 200 800;
+  font-weight: 400 800;
   font-display: swap;
-  src: url('../font/plusjakartasans-latin-var.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 100 800;
-  font-display: swap;
-  src: url('../font/jetbrainsmono-latin-var.woff2') format('woff2');
+  src: url('../font/manrope-latin-var.woff2') format('woff2');
 }
 
 :root {
@@ -230,9 +218,12 @@
   --grid-size:      40px;
 
   /* --- Tipografi ------------------------------------------------------------ */
-  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
-  --font-text:    'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-  --font-num:     'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font-display: 'Archivo', 'Segoe UI', system-ui, sans-serif;
+  --font-text:    'Manrope', 'Segoe UI', system-ui, sans-serif;
+  /* Monospace SISTEM — lihat catatan panjang di kepala berkas soal kenapa
+     angka tidak boleh jatuh ke --font-text. */
+  --font-num:     ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas,
+                  'SF Mono', 'Liberation Mono', monospace;
 
   /* Basis 16px, mengikuti situs induk. Ini TURUN dari 17px yang dipakai tema
      BRUTAL (CP-06, dinaikkan demi warga sepuh) — dan itu disengaja: tema ini
